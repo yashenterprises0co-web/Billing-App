@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Billing - Invoice / Challan / Quotation (Enhanced Single File)</title>
-<meta name="description" content="Single-file billing app — invoices, challans, quotations. 24-hour edit lock, admin override, exports, image previews, GST split, UPI QR, PDF/AutoTable, CSV, Word, JSON import/export."/>
+<title>Billing - Invoice / Challan / Quotation (Enhanced)</title>
+<meta name="description" content="Enhanced single-file billing app — invoices, challans, quotations. 24-hour edit lock, admin override, exports, GST split, UPI QR."/>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <style>
-  :root{--bg:#f7fbff;--card:#fff;--muted:#6b7280;--accent:#0b74ff;--success:#16a34a;--danger:#be123c}
+  :root{--bg:#f7fbff;--card:#fff;--muted:#6b7280;--accent:#0b74ff;--success:#16a34a}
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),#fff);color:#111}
   .container{max-width:1200px;margin:18px auto;padding:16px}
@@ -16,7 +17,7 @@
   .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
   .btn.ghost{background:transparent;border:1px dashed #ddd;color:var(--muted)}
   .small{padding:6px 8px;font-size:13px}
-  .layout{display:grid;grid-template-columns:340px 1fr 360px;gap:16px;margin-top:16px}
+  .layout{display:grid;grid-template-columns:320px 1fr 360px;gap:16px;margin-top:16px}
   .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(13,17,23,0.04)}
   label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
   input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6edf3;margin-top:6px;font-size:14px}
@@ -26,18 +27,12 @@
   table th{background:#f1f5f9}
   .image-thumb{max-width:90px;max-height:60px;border-radius:6px}
   .muted{color:var(--muted);font-size:13px}
-  .error{color:var(--danger);font-size:13px}
+  .error{color:#b91c1c;font-size:13px}
   .doc-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #f3f4f6}
   .tag{padding:4px 8px;border-radius:6px;background:#f1f5f9;font-size:12px}
-  .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:60}
-  .modal .box{background:#fff;padding:18px;border-radius:8px;width:720px;max-width:96%;box-shadow:0 8px 30px rgba(2,6,23,.2);max-height:90vh;overflow:auto}
-  .right{position:relative}
-  .flex{display:flex;gap:8px}
-  .right-actions{display:flex;flex-direction:column;gap:8px}
-  .text-right{text-align:right}
-  .qr{width:120px;height:120px;border:1px solid #eee;padding:6px;border-radius:8px}
-  .top-note{font-size:12px;color:var(--muted)}
-  .danger{color:var(--danger)}
+  .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45)}
+  .modal .box{background:#fff;padding:18px;border-radius:8px;width:420px;max-width:92%;box-shadow:0 8px 30px rgba(2,6,23,.2)}
+  .right-align{text-align:right}
   @media (max-width:1000px){.layout{grid-template-columns:1fr}.right{order:3}}
 </style>
 </head>
@@ -46,7 +41,7 @@
   <header>
     <div>
       <h1>Billing • Invoice / Challan / Quotation (Enhanced)</h1>
-      <div class="muted" id="appSubtitle">Document library • 24-hour edit rule • Admin override • PDF/Print/UPI</div>
+      <div class="muted" id="appSubtitle">Document library • 24-hour edit rule • Admin override • GST split • UPI QR</div>
     </div>
     <div class="toolbar">
       <button class="btn" id="btnNew">New Document</button>
@@ -93,15 +88,10 @@
       <input type="date" id="docDate">
 
       <label>Currency</label>
-      <select id="currency">
-        <option value="INR">₹ INR</option>
-        <option value="USD">$ USD</option>
-        <option value="EUR">€ EUR</option>
-        <option value="GBP">£ GBP</option>
-      </select>
+      <select id="currency"><option value="INR">₹ INR</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option></select>
 
-      <label>Default Tax % (applies per-line when line tax not set)</label>
-      <input type="number" id="defaultTax" value="18" step="0.01" min="0" max="100">
+      <label>Default Tax % (global)</label>
+      <input type="number" id="defaultTax" value="0" step="0.01">
 
       <label>Terms & Conditions</label>
       <textarea id="terms">Payment due within 30 days.</textarea>
@@ -109,23 +99,15 @@
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
         <button class="btn small" id="btnAddItem">Add Item</button>
         <button class="btn small" id="btnSave">Save</button>
-        <button class="btn small" id="btnImport">Import JSON</button>
         <button class="btn small" id="btnExportPDF">Export PDF</button>
-        <button class="btn small" id="btnPrint">Print</button>
+        <button class="btn small" id="importJsonBtn">Import JSON</button>
       </div>
 
-      <div style="margin-top:8px">
-        <label>Round off totals?</label>
-        <select id="roundOff"><option value="none">No</option><option value="nearest">Nearest</option><option value="up">Round Up</option><option value="down">Round Down</option></select>
-      </div>
-
-      <div style="margin-top:8px">
-        <label>UPI (for QR)</label>
-        <input type="text" id="upiId" placeholder="yourupi@bank">
-        <label>UPI Payee Name</label>
-        <input type="text" id="upiName" placeholder="Payee name">
-      </div>
-
+      <hr/>
+      <label>UPI / Payment</label>
+      <input type="text" id="upiString" placeholder="upi://pay?pa=... (or VPA)"/>
+      <canvas id="upiQR" style="display:block;margin-top:8px;max-width:160px"></canvas>
+      <button class="btn small" id="genQr">Generate QR</button>
     </aside>
 
     <!-- CENTER: Preview / Items -->
@@ -138,7 +120,7 @@
             <div id="previewFromAddr" class="muted"></div>
           </div>
         </div>
-        <div style="text-align:right;min-width:260px">
+        <div style="text-align:right;min-width:220px">
           <div id="previewType" style="font-weight:700;font-size:16px">Invoice</div>
           <div class="muted">No: <span id="previewNo"></span></div>
           <div class="muted">Date: <span id="previewDate"></span></div>
@@ -153,7 +135,7 @@
       </div>
 
       <table id="itemsTable">
-        <thead><tr><th>Image</th><th>Description</th><th>HSN/SAC</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Per-line Disc %</th><th>Tax %</th><th>Amount</th><th>Action</th></tr></thead>
+        <thead><tr><th>Image</th><th>Description</th><th>HSN/SAC</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Line Disc %</th><th>Tax %</th><th>Amount</th><th>Action</th></tr></thead>
         <tbody id="itemsBody"></tbody>
       </table>
 
@@ -163,15 +145,19 @@
           <input type="number" id="discount" value="0" step="0.01">
         </div>
         <div>
-          <label>Shipping</label>
+          <label>Shipping / Other Charges</label>
           <input type="number" id="shipping" value="0" step="0.01">
+        </div>
+        <div>
+          <label>Round Off</label>
+          <select id="roundOff"><option value="0">No</option><option value="1">Round to nearest</option></select>
         </div>
 
         <div style="margin-left:auto;text-align:right">
           <div class="muted">Subtotal: <span id="subtotal">0.00</span></div>
-          <div class="muted">Global Discount: <span id="discountVal">0.00</span></div>
+          <div class="muted">Discount: <span id="discountVal">0.00</span></div>
           <div class="muted">Tax: <span id="taxVal">0.00</span></div>
-          <div class="muted" id="gstSplit" style="display:none">CGST: <span id="cgstVal">0.00</span> • SGST: <span id="sgstVal">0.00</span></div>
+          <div class="muted" id="gstSplit" style="display:none">CGST: <span id="cgstVal">0.00</span> | SGST: <span id="sgstVal">0.00</span></div>
           <div style="font-weight:700">Grand Total: <span id="grandTotal">0.00</span></div>
           <div class="muted">In words: <span id="inWords"></span></div>
         </div>
@@ -194,16 +180,15 @@
         </select>
       </div>
 
-      <div id="libraryList" style="max-height:320px;overflow:auto;border:1px solid #f3f4f6;border-radius:8px"></div>
+      <div id="libraryList" style="max-height:420px;overflow:auto;border:1px solid #f3f4f6;border-radius:8px"></div>
 
       <hr style="margin:12px 0">
 
-      <div class="right-actions">
+      <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn" id="exportJson">Export JSON (current)</button>
-        <button class="btn" id="exportCsv">Export CSV</button>
-        <button class="btn" id="exportDoc">Export Word (.doc)</button>
+        <button class="btn" id="exportCsv">Export CSV (current)</button>
+        <button class="btn" id="exportDoc">Export Word (.doc) (current)</button>
         <button class="btn ghost" id="btnShare">Share (WhatsApp/Email)</button>
-        <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
 
       <div style="margin-top:12px">
@@ -211,31 +196,22 @@
         <label>Language (UI)</label>
         <select id="uiLang"><option value="en">English</option><option value="hi">हिंदी</option><option value="mr">मराठी</option></select>
 
-        <label style="margin-top:8px">Company Name</label>
-        <input id="companyName" type="text">
-        <label style="margin-top:8px">Company Address</label>
-        <textarea id="companyAddress"></textarea>
-        <label style="margin-top:8px">Company Phone</label>
-        <input id="companyPhone" type="tel">
-
         <label style="margin-top:8px">Custom Terms (Default)</label>
         <textarea id="defaultTerms" style="min-height:80px"></textarea>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn small" id="saveSettings">Save Settings</button>
-          <button class="btn small ghost" id="clearAll">Clear All Data</button>
-        </div>
-      </div>
-
-      <div style="margin-top:12px">
-        <h4 class="muted">UPI QR Preview</h4>
-        <div id="upiPreview" class="qr"></div>
+        <label style="margin-top:8px">Company Name</label>
+        <input id="companyName" type="text"/>
+        <label style="margin-top:8px">Company Phone</label>
+        <input id="companyPhone" type="text"/>
+        <label style="margin-top:8px">Default Currency</label>
+        <select id="companyCurrency"><option value="INR">INR</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
+        <button class="btn small" id="saveSettings">Save Settings</button>
       </div>
     </aside>
   </div>
 </div>
 
 <!-- Admin modal -->
-<div class="modal" id="adminModal">
+<div class="modal" id="adminModal" style="display:none">
   <div class="box">
     <h3>Admin</h3>
     <p class="muted">Admin can edit documents older than 24 hours, delete documents, and change settings.</p>
@@ -254,7 +230,7 @@
 </div>
 
 <!-- Document view modal -->
-<div class="modal" id="docViewModal">
+<div class="modal" id="docViewModal" style="display:none">
   <div class="box" style="max-width:900px;width:92%;overflow:auto;max-height:90vh">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <h3 id="docViewTitle">Document</h3>
@@ -268,28 +244,30 @@
   </div>
 </div>
 
-<!-- jsPDF + AutoTable -->
+<!-- external libs: jsPDF, AutoTable, QR generator -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
 
 <script>
 (function(){
   'use strict';
+
   // ---------- Utilities ----------
   const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  const fmt = (n, currencySymbol='') => (Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}));
+  const fmt = n => Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   const nowISO = () => new Date().toISOString();
   const saveBlob = (blob, name) => { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),30000); };
 
   // ---------- Elements ----------
   const btnNew = $('#btnNew'), btnLibrary = $('#btnLibrary'), btnAdmin = $('#btnAdmin');
+  const langSelect = $('#langSelect');
   const editorPanel = $('#editorPanel'), previewPanel = $('#previewPanel'), rightPanel = $('#rightPanel');
   const docType = $('#docType'), logoFile = $('#logoFile'), logoPreview = $('#logoPreview'), logoSmall = $('#logoSmall');
   const fromName = $('#fromName'), fromAddr = $('#fromAddr'), fromPhone = $('#fromPhone'), fromPhoneErr = $('#fromPhoneErr');
   const toName = $('#toName'), toAddr = $('#toAddr'), toPhone = $('#toPhone'), toPhoneErr = $('#toPhoneErr');
   const docNo = $('#docNo'), docDate = $('#docDate'), currency = $('#currency'), defaultTax = $('#defaultTax'), terms = $('#terms');
-  const btnAddItem = $('#btnAddItem'), btnSave = $('#btnSave'), btnExportPDF = $('#btnExportPDF'), btnPrint = $('#btnPrint'), btnImport = $('#btnImport');
+  const btnAddItem = $('#btnAddItem'), btnSave = $('#btnSave'), btnExportPDF = $('#btnExportPDF');
   const itemsBody = $('#itemsBody'), discount = $('#discount'), shipping = $('#shipping');
   const subtotalEl = $('#subtotal'), discountEl = $('#discountVal'), taxEl = $('#taxVal'), grandEl = $('#grandTotal');
   const previewFromName = $('#previewFromName'), previewFromAddr = $('#previewFromAddr'), previewToName = $('#previewToName'), previewToAddr = $('#previewToAddr'), previewToPhone = $('#previewToPhone');
@@ -297,17 +275,17 @@
   const libraryList = $('#libraryList'), searchBox = $('#searchBox'), filterType = $('#filterType');
   const exportJson = $('#exportJson'), exportCsv = $('#exportCsv'), exportDoc = $('#exportDoc'), btnShare = $('#btnShare');
   const uiLang = $('#uiLang'), defaultTerms = $('#defaultTerms'), saveSettings = $('#saveSettings');
-  const adminModal = $('#adminModal'), adminLoginBtn = $('#adminLoginBtn'), adminCloseBtn = $('#adminCloseBtn'), adminSetBtn = $('#adminSetBtn');
+  const adminModal = $('#adminModal'), adminLoginBtn = $('#adminLoginBtn'), adminCloseBtn = $('#adminCloseBtn'), btnAdminSet = $('#adminSetBtn');
   const adminPassInput = $('#adminPassInput'), adminNewPass = $('#adminNewPass');
   const docViewModal = $('#docViewModal'), docViewContent = $('#docViewContent'), docViewCloseBtn = $('#docViewCloseBtn'), docViewDownloadBtn = $('#docViewDownloadBtn'), docViewEditBtn = $('#docViewEditBtn');
-  const importFile = $('#importFile');
-  const companyNameInput = $('#companyName'), companyAddressInput = $('#companyAddress'), companyPhoneInput = $('#companyPhone');
-  const roundOff = $('#roundOff'), upiId = $('#upiId'), upiName = $('#upiName'), upiPreview = $('#upiPreview');
-  const inWordsEl = $('#inWords'), gstSplitEl = $('#gstSplit'), cgstVal = $('#cgstVal'), sgstVal = $('#sgstVal');
+  const roundOffSel = $('#roundOff'), cgstVal = $('#cgstVal'), sgstVal = $('#sgstVal'), gstSplit = $('#gstSplit'), inWordsEl = $('#inWords');
+  const upiInput = $('#upiString'), genQrBtn = $('#genQr'), upiCanvas = $('#upiQR');
+  const importJsonBtn = $('#importJsonBtn');
+  const companyNameInput = $('#companyName'), companyPhoneInput = $('#companyPhone'), companyCurrency = $('#companyCurrency');
 
   // ---------- State ----------
   let docs = JSON.parse(localStorage.getItem('docs')||'[]');
-  let settings = JSON.parse(localStorage.getItem('appSettings')||'{}');
+  let settings = JSON.parse(localStorage.getItem('appSettings')||'{"uiLang":"en","defaultTerms":"Payment due within 30 days.","companyName":"Yash Enterprises","companyPhone":"","companyCurrency":"INR","defaultTax":0}');
   let admin = { loggedIn: sessionStorage.getItem('adminLogged') === '1', password: localStorage.getItem('adminPass') || 'admin123' };
   let currentDoc = null; // doc being edited (object) or null
   let items = [];        // items list for current editor
@@ -319,28 +297,26 @@
   function addHours(iso, hours){ const d=new Date(iso); d.setHours(d.getHours()+hours); return d.toISOString(); }
   function within24Hours(iso){ return new Date() < new Date(addHours(iso,24)); }
 
-  function isEditable(doc){ if(!doc) return false; if(admin.loggedIn) return true; return new Date() < new Date(addHours(doc.createdAt,24)); }
+  function isEditable(doc){
+    if(!doc) return false;
+    if(admin.loggedIn) return true;
+    return new Date() < new Date(addHours(doc.createdAt,24));
+  }
 
   function persist(){ localStorage.setItem('docs', JSON.stringify(docs)); }
   function persistSettings(){ localStorage.setItem('appSettings', JSON.stringify(settings)); }
 
-  function setCurrentDoc(doc){ currentDoc = doc ? JSON.parse(JSON.stringify(doc)) : null; items = currentDoc ? (currentDoc.items||[]) : []; logoData = currentDoc ? currentDoc.logo || '' : ''; renderEditorFromDoc(); renderItemsTable(); calculateTotals(); renderPreview(); }
-
-  // number to words (Indian)
-  function numberToWordsIndian(num){ num = Number(Math.round(num)); if(isNaN(num)) return '';
-    if(num===0) return 'zero';
-    const a=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
-    const b=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
-    function two(n){ if(n<20) return a[n]; const tens = Math.floor(n/10); const rem = n%10; return b[tens] + (rem? ' ' + a[rem] : ''); }
-    function three(n){ const hundred = Math.floor(n/100); const rem = n%100; return (hundred? a[hundred] + ' hundred' + (rem? ' and ' : '') : '') + (rem? two(rem) : ''); }
-    const parts=[];
-    const crore = Math.floor(num/10000000); if(crore){ parts.push(three(crore) + ' crore'); num = num % 10000000; }
-    const lakh = Math.floor(num/100000); if(lakh){ parts.push(three(lakh) + ' lakh'); num = num % 100000; }
-    const thousand = Math.floor(num/1000); if(thousand){ parts.push(three(thousand) + ' thousand'); num = num % 1000; }
-    if(num) parts.push(three(num)); return parts.join(' ');
+  function setCurrentDoc(doc){
+    currentDoc = doc ? JSON.parse(JSON.stringify(doc)) : null;
+    items = currentDoc ? (currentDoc.items||[]) : [];
+    logoData = currentDoc ? currentDoc.logo || '' : '';
+    renderEditorFromDoc();
+    renderItemsTable();
+    calculateTotals();
+    renderPreview();
   }
 
-  // ---------- Rendering ----------
+  // ---------- Rendering / Editor ----------
   function renderEditorFromDoc(){
     if(!currentDoc){
       docType.value = 'Invoice';
@@ -352,22 +328,24 @@
       toName.value = '';
       toAddr.value = '';
       toPhone.value = '';
-      terms.value = settings.defaultTerms || 'Payment due within 30 days.';
-      items = items.length ? items : [{desc:'',hsn:'',unit:'pcs',qty:1,rate:0,disc:0,tax:null,image:''}];
+      terms.value = settings.defaultTerms || '';
+      items = items.length ? items : [{desc:'',hsn:'',unit:'pcs',qty:1,rate:0,lineDiscount:0,tax:settings.defaultTax||0,image:''}];
       logoPreview.src = logoData || '';
       logoSmall.style.display = logoData ? 'inline-block' : 'none';
+      currency.value = settings.companyCurrency || 'INR';
+      defaultTax.value = settings.defaultTax || 0;
     } else {
       docType.value = currentDoc.type;
       docNo.value = currentDoc.number || '';
       docDate.value = currentDoc.date || '';
-      fromName.value = currentDoc.from?.name || '';
-      fromAddr.value = currentDoc.from?.address || '';
-      fromPhone.value = currentDoc.from?.phone || '';
+      fromName.value = currentDoc.from?.name || settings.companyName || '';
+      fromAddr.value = currentDoc.from?.address || settings.companyAddress || '';
+      fromPhone.value = currentDoc.from?.phone || settings.companyPhone || '';
       toName.value = currentDoc.to?.name || '';
       toAddr.value = currentDoc.to?.address || '';
       toPhone.value = currentDoc.to?.phone || '';
-      currency.value = currentDoc.currency || 'INR';
-      defaultTax.value = currentDoc.defaultTax || 0;
+      currency.value = currentDoc.currency || settings.companyCurrency || 'INR';
+      defaultTax.value = currentDoc.defaultTax || settings.defaultTax || 0;
       terms.value = currentDoc.terms || settings.defaultTerms || '';
       items = JSON.parse(JSON.stringify(currentDoc.items || []));
       logoData = currentDoc.logo || '';
@@ -403,65 +381,67 @@
       const tdQty = document.createElement('td'); const inpQty = document.createElement('input'); inpQty.type='number'; inpQty.step='0.01'; inpQty.min='0'; inpQty.value = it.qty||0; inpQty.addEventListener('input', e=>{ it.qty = Number(e.target.value)||0; updateAmount(idx); }); tdQty.appendChild(inpQty);
 
       // rate
-      const tdRate = document.createElement('td'); const inpRate = document.createElement('input'); inpRate.type='number'; inpRate.step='0.01'; inpRate.min='0'; inpRate.value = it.rate||0; inpRate.addEventListener('input', e=>{ it.rate = Number(e.target.value)||0; if(it.rate<0) it.rate=0; updateAmount(idx); }); tdRate.appendChild(inpRate);
+      const tdRate = document.createElement('td'); const inpRate = document.createElement('input'); inpRate.type='number'; inpRate.step='0.01'; inpRate.min='0'; inpRate.value = it.rate||0; inpRate.addEventListener('input', e=>{ it.rate = Number(e.target.value)||0; updateAmount(idx); }); tdRate.appendChild(inpRate);
 
-      // per-line discount
-      const tdDisc = document.createElement('td'); const inpDisc = document.createElement('input'); inpDisc.type='number'; inpDisc.step='0.01'; inpDisc.min='0'; inpDisc.max='100'; inpDisc.value = it.disc||0; inpDisc.addEventListener('input', e=>{ it.disc = Number(e.target.value)||0; if(it.disc<0) it.disc=0; if(it.disc>100) it.disc=100; updateAmount(idx); }); tdDisc.appendChild(inpDisc);
+      // line discount
+      const tdLineDisc = document.createElement('td'); const inpLineDisc = document.createElement('input'); inpLineDisc.type='number'; inpLineDisc.step='0.01'; inpLineDisc.min='0'; inpLineDisc.value = it.lineDiscount||0; inpLineDisc.addEventListener('input', e=>{ it.lineDiscount = Number(e.target.value)||0; updateAmount(idx); }); tdLineDisc.appendChild(inpLineDisc);
 
       // tax
-      const tdTax = document.createElement('td'); const inpTax = document.createElement('input'); inpTax.type='number'; inpTax.step='0.01'; inpTax.min='0'; inpTax.max='100'; inpTax.value = (it.tax===null||it.tax===undefined) ? '' : it.tax; inpTax.placeholder = ''+defaultTax.value; inpTax.addEventListener('input', e=>{ it.tax = e.target.value===''? null : Number(e.target.value); updateAmount(idx); }); tdTax.appendChild(inpTax);
+      const tdTax = document.createElement('td'); const inpTax = document.createElement('input'); inpTax.type='number'; inpTax.step='0.01'; inpTax.min='0'; inpTax.value = it.tax||defaultTax.value||0; inpTax.addEventListener('input', e=>{ it.tax = Number(e.target.value)||0; updateAmount(idx); }); tdTax.appendChild(inpTax);
 
       // amount
-      const tdAmt = document.createElement('td'); tdAmt.className = 'text-right'; tdAmt.textContent = fmt(lineAmount(it));
+      const tdAmt = document.createElement('td'); tdAmt.className = 'right-align'; tdAmt.textContent = fmt(computeLineAmount(it));
 
       // action
       const tdAct = document.createElement('td');
       const rem = document.createElement('button'); rem.className='small'; rem.textContent='Remove'; rem.addEventListener('click', ()=>{ items.splice(idx,1); renderItemsTable(); calculateTotals(); });
       tdAct.appendChild(rem);
 
-      tr.appendChild(tdImg); tr.appendChild(tdDesc); tr.appendChild(tdHsn); tr.appendChild(tdUnit); tr.appendChild(tdQty); tr.appendChild(tdRate); tr.appendChild(tdDisc); tr.appendChild(tdTax); tr.appendChild(tdAmt); tr.appendChild(tdAct);
+      tr.appendChild(tdImg); tr.appendChild(tdDesc); tr.appendChild(tdHsn); tr.appendChild(tdUnit); tr.appendChild(tdQty); tr.appendChild(tdRate); tr.appendChild(tdLineDisc); tr.appendChild(tdTax); tr.appendChild(tdAmt); tr.appendChild(tdAct);
       itemsBody.appendChild(tr);
 
-      function updateAmount(i){ tdAmt.textContent = fmt(lineAmount(it)); calculateTotals(false); renderPreview(); }
+      function updateAmount(i){ tdAmt.textContent = fmt(computeLineAmount(it)); calculateTotals(false); renderPreview(); }
     });
   }
 
-  function lineAmount(it){ const qty = Number(it.qty)||0; const rate = Number(it.rate)||0; const gross = qty*rate; const disc = gross * ((Number(it.disc)||0)/100); const taxable = gross - disc; const taxPerc = (it.tax===null||it.tax===undefined) ? Number(defaultTax.value)||0 : Number(it.tax)||0; const taxVal = taxable * (taxPerc/100); return taxable + taxVal; }
-
   async function readFileAsDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+
+  function computeLineAmount(it){
+    const qty = Number(it.qty)||0; const rate = Number(it.rate)||0; const ld = Number(it.lineDiscount)||0; const tax = Number(it.tax)||0;
+    const base = qty * rate;
+    const afterLineDisc = base - (base * (ld/100));
+    const taxAmt = afterLineDisc * (tax/100);
+    return afterLineDisc + taxAmt;
+  }
 
   function calculateTotals(renderPreviewFlag = true){
     const sub = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0)),0);
-    const globalDisc = sub * ((Number(discount.value)||0)/100);
-    const tax = items.reduce((s,it)=> { const qty = Number(it.qty)||0; const rate = Number(it.rate)||0; const gross = qty*rate; const disc = gross * ((Number(it.disc)||0)/100); const taxable = gross - disc; const taxPerc = (it.tax===null||it.tax===undefined) ? Number(defaultTax.value)||0 : Number(it.tax)||0; return s + (taxable * (taxPerc/100)); },0);
+    const lineDiscTotal = items.reduce((s,it)=> s + (((Number(it.qty)||0)*(Number(it.rate)||0))* (Number(it.lineDiscount)||0)/100),0);
+    const disc = (sub - lineDiscTotal) * ((Number(discount.value)||0)/100);
+    const tax = items.reduce((s,it)=> {
+      const qty = Number(it.qty)||0; const rate = Number(it.rate)||0; const ld = Number(it.lineDiscount)||0; const taxP = Number(it.tax)||0;
+      const afterLine = qty*rate - (qty*rate*(ld/100));
+      return s + (afterLine * (taxP/100));
+    },0);
     const ship = Number(shipping.value)||0;
-    let grand = sub - globalDisc + tax + ship;
+    let grand = sub - lineDiscTotal - disc + tax + ship;
     // round off
-    const roundMode = roundOff.value;
-    let roundAdj = 0;
-    if(roundMode==='nearest'){ const nearest = Math.round(grand); roundAdj = nearest - grand; grand = nearest; }
-    else if(roundMode==='up'){ const ceil = Math.ceil(grand); roundAdj = ceil - grand; grand = ceil; }
-    else if(roundMode==='down'){ const fl = Math.floor(grand); roundAdj = fl - grand; grand = fl; }
-
+    if(roundOffSel.value === '1'){ grand = Math.round(grand); }
     subtotalEl.textContent = fmt(sub);
-    discountEl.textContent = fmt(globalDisc);
+    discountEl.textContent = fmt(lineDiscTotal + disc);
     taxEl.textContent = fmt(tax);
     grandEl.textContent = fmt(grand);
 
     // GST split when INR
-    if(currency.value==='INR'){
-      const cgst = tax/2; const sgst = tax/2; gstSplitEl.style.display='block'; cgstVal.textContent = fmt(cgst); sgstVal.textContent = fmt(sgst);
-    } else { gstSplitEl.style.display='none'; }
-
-    // number to words (INR uses rupees)
-    if(currency.value==='INR'){
-      const rupees = Math.floor(grand);
-      const paise = Math.round((grand - rupees)*100);
-      const words = numberToWordsIndian(rupees) + ' rupees' + (paise? (' and ' + numberToWordsIndian(paise) + ' paise') : ' only');
-      inWordsEl.textContent = words;
+    if((currency.value||'INR') === 'INR'){
+      const half = tax/2;
+      cgstVal.textContent = fmt(half); sgstVal.textContent = fmt(half); gstSplit.style.display='block';
     } else {
-      inWordsEl.textContent = '';
+      gstSplit.style.display='none';
     }
+
+    // words
+    inWordsEl.textContent = numberToWordsIndian(Math.round(grand)) + ' only';
 
     if(renderPreviewFlag) renderPreview();
   }
@@ -478,29 +458,41 @@
     termsPreview.textContent = terms.value || settings.defaultTerms || '';
     logoSmall.style.display = logoData ? 'inline-block' : 'none';
     if(logoData){ logoSmall.src = logoData; logoPreview.src = logoData; }
+
+    // update items table preview amounts
+    // (already in editor table)
   }
 
   function renderLibrary(filter=''){
     libraryList.innerHTML = '';
     const q = (searchBox.value||'').toLowerCase();
     const typeFilter = filterType.value;
-    const list = docs.filter(d => { if(typeFilter && d.type !== typeFilter) return false; if(!q) return true; return (d.to?.name||'').toLowerCase().includes(q) || (d.number||'').toLowerCase().includes(q); });
+    const list = docs.filter(d => {
+      if(typeFilter && d.type !== typeFilter) return false;
+      if(!q) return true;
+      return (d.to?.name||'').toLowerCase().includes(q) || (d.number||'').toLowerCase().includes(q);
+    });
     list.forEach(d => {
       const el = document.createElement('div'); el.className='doc-row';
       const left = document.createElement('div'); left.innerHTML = `<div style="font-weight:700">${escapeHtml(d.type)} • ${escapeHtml(d.number||'')}</div><div class="muted">${escapeHtml(d.to?.name||'')} • ${new Date(d.createdAt).toLocaleString()}</div>`;
-      const right = document.createElement('div');
+      const right = document.createElement('div'); 
       const total = (d.items||[]).reduce((s,it)=> s + ((it.qty||0)*(it.rate||0)*(1+(it.tax||0)/100)),0);
       const span = document.createElement('span'); span.className='tag'; span.textContent = fmt(total);
-      const status = document.createElement('div'); status.className='muted'; status.style.marginTop='4px'; status.textContent = isEditable(d) ? 'Editable' : 'Locked';
-      const viewBtn = document.createElement('button'); viewBtn.className='small'; viewBtn.textContent = 'View'; viewBtn.addEventListener('click', ()=> openDocView(d.id));
-      const delBtn = document.createElement('button'); delBtn.className='small ghost'; delBtn.textContent='Delete'; delBtn.addEventListener('click', ()=> { if(!admin.loggedIn) return alert('Admin only'); if(confirm('Delete this document?')){ docs = docs.filter(x=>x.id!==d.id); persist(); renderLibrary(); } });
+      const status = document.createElement('div'); status.className='muted'; status.style.marginTop='4px';
+      status.textContent = isEditable(d) ? 'Editable' : 'Locked';
+      const viewBtn = document.createElement('button'); viewBtn.className='small'; viewBtn.textContent = 'View';
+      viewBtn.addEventListener('click', ()=> openDocView(d.id));
+      const delBtn = document.createElement('button'); delBtn.className='small'; delBtn.textContent='Delete'; delBtn.style.marginLeft='6px'; delBtn.addEventListener('click', ()=> deleteDoc(d.id));
       right.appendChild(span); right.appendChild(status); right.appendChild(document.createElement('br')); right.appendChild(viewBtn); right.appendChild(delBtn);
       el.appendChild(left); el.appendChild(right);
       libraryList.appendChild(el);
     });
   }
 
-  function clearEditor(){ currentDoc = null; items = [{desc:'',hsn:'',unit:'pcs',qty:1,rate:0,disc:0,tax:null,image:''}]; logoData=''; logoPreview.src=''; logoSmall.style.display='none'; renderEditorFromDoc(); renderItemsTable(); calculateTotals(); renderPreview(); }
+  function clearEditor(){
+    currentDoc = null; items = [{desc:'',hsn:'',unit:'pcs',qty:1,rate:0,lineDiscount:0,tax:settings.defaultTax||0,image:''}]; logoData=''; logoPreview.src=''; logoSmall.style.display='none';
+    renderEditorFromDoc(); renderItemsTable(); calculateTotals(); renderPreview();
+  }
 
   // ---------- Document lifecycle ----------
   function createDocumentObject(){
@@ -518,7 +510,6 @@
       shipping: Number(shipping.value)||0,
       terms: terms.value,
       logo: logoData,
-      upi: { id: upiId.value, name: upiName.value },
       createdAt: currentDoc && currentDoc.createdAt ? currentDoc.createdAt : nowISO(),
       lastModified: nowISO()
     };
@@ -526,96 +517,209 @@
   }
 
   function saveCurrentDoc(){
+    // validation: phones
     if(fromPhone.value && !isPhone(fromPhone.value)){ fromPhoneErr.style.display='block'; alert('Company phone invalid'); return false; } else fromPhoneErr.style.display='none';
     if(toPhone.value && !isPhone(toPhone.value)){ toPhoneErr.style.display='block'; alert('Customer phone invalid'); return false; } else toPhoneErr.style.display='none';
 
     if(currentDoc && currentDoc.id){
       const idx = docs.findIndex(d => d.id === currentDoc.id);
       if(idx === -1){ alert('Document not found'); return false; }
-      if(!isEditable(docs[idx])){ return alert('This document is locked (editable only within 24 hours). Admin can override.'); }
-      const updated = createDocumentObject(); updated.id = docs[idx].id; updated.createdAt = docs[idx].createdAt; updated.lastModified = nowISO(); docs[idx] = updated;
+      if(!isEditable(docs[idx])){ if(!admin.loggedIn){ alert('This document is locked (editable only within 24 hours). Admin can override.'); return false; } }
+      const updated = createDocumentObject();
+      updated.id = docs[idx].id; updated.createdAt = docs[idx].createdAt; updated.lastModified = nowISO();
+      docs[idx] = updated;
     } else {
-      const doc = createDocumentObject(); docs.unshift(doc); currentDoc = JSON.parse(JSON.stringify(doc));
+      const doc = createDocumentObject();
+      docs.unshift(doc);
+      currentDoc = JSON.parse(JSON.stringify(doc));
     }
     persist(); renderLibrary(); alert('Saved locally'); return true;
   }
 
-  function openDocView(id){ const doc = docs.find(d => d.id === id); if(!doc) return alert('Document not found'); docViewContent.innerHTML = buildDocHTML(doc, true); docViewModal.style.display='flex'; docViewDownloadBtn.onclick = () => saveBlob(new Blob([JSON.stringify(doc,null,2)],{type:'application/json'}), (doc.number||'doc') + '.json'); docViewEditBtn.onclick = () => { if(!isEditable(doc) && !admin.loggedIn){ return alert('This document is locked for editing'); } setCurrentDoc(doc); docViewModal.style.display='none'; } }
+  function openDocView(id){
+    const doc = docs.find(d => d.id === id);
+    if(!doc) return alert('Document not found');
+    docViewContent.innerHTML = buildDocHTML(doc, true);
+    docViewModal.style.display='flex';
+    docViewDownloadBtn.onclick = () => saveBlob(new Blob([JSON.stringify(doc,null,2)],{type:'application/json'}), (doc.number||'doc') + '.json');
+    docViewEditBtn.onclick = () => {
+      if(!isEditable(doc) && !admin.loggedIn){ return alert('This document is locked for editing'); }
+      setCurrentDoc(doc);
+      docViewModal.style.display='none';
+    };
+  }
 
-  function buildDocHTML(doc, forPrint=false){ let html = `<div><h2>${escapeHtml(doc.type)} • ${escapeHtml(doc.number||'')}</h2>`; html += `<div><strong>From:</strong> ${escapeHtml(doc.from.name||'')}<br/>${escapeHtml(doc.from.address||'')}<br/>${escapeHtml(doc.from.phone||'')}</div>`; html += `<div style="margin-top:8px"><strong>To:</strong> ${escapeHtml(doc.to.name||'')}<br/>${escapeHtml(doc.to.address||'')}<br/>${escapeHtml(doc.to.phone||'')}</div>`; html += '<table border="1" cellspacing="0" cellpadding="6" style="width:100%;margin-top:8px"><thead><tr><th>Image</th><th>Desc</th><th>HSN</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Disc%</th><th>Tax%</th><th>Amount</th></tr></thead><tbody>'; doc.items.forEach(it => { const amt = ((it.qty||0)*(it.rate||0))* (1 - ((it.disc||0)/100)) * (1 + (((it.tax===null||it.tax===undefined)?doc.defaultTax:it.tax)||0)/100); html += `<tr><td>${it.image?('<img src="'+it.image+'" style="max-width:80px;max-height:60px" />') : ''}</td><td>${escapeHtml(it.desc||'')}</td><td>${escapeHtml(it.hsn||'')}</td><td>${escapeHtml(it.unit||'')}</td><td>${it.qty||0}</td><td>${it.rate||0}</td><td>${it.disc||0}</td><td>${(it.tax===null||it.tax===undefined)?doc.defaultTax:it.tax}</td><td>${Number(amt).toFixed(2)}</td></tr>`; }); html += '</tbody></table>'; const subtotal = doc.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0)),0); const disc = subtotal * ((doc.discount||0)/100); const tax = doc.items.reduce((s,it)=> { const qty=it.qty||0; const rate=it.rate||0; const gross=qty*rate; const discLine=gross*((it.disc||0)/100); const taxable = gross - discLine; const taxPerc=(it.tax===null||it.tax===undefined)?doc.defaultTax:it.tax; return s + (taxable*(taxPerc/100)); },0); const grand = subtotal - disc + tax + (doc.shipping||0); html += `<div style="margin-top:8px"><strong>Totals:</strong><br/>Subtotal: ${fmt(subtotal)}<br/>Discount: ${fmt(disc)}<br/>Tax: ${fmt(tax)}<br/>Shipping: ${fmt(doc.shipping||0)}<br/><strong>Grand: ${fmt(grand)}</strong></div>`; if(doc.upi && doc.upi.id){ const qrSrc = generateUpiQrDataUrl(doc.upi); html += `<div style="margin-top:8px"><strong>UPI:</strong><br/>${escapeHtml(doc.upi.id)}<br/><img src="${qrSrc}" style="width:140px;height:140px"/></div>`; } html += `<div style="margin-top:8px"><strong>Terms:</strong><br/>${escapeHtml(doc.terms||'')}</div>`; html += '</div>'; return html; }
+  function buildDocHTML(doc, forPrint=false){
+    let html = `<div><h2>${escapeHtml(doc.type)} • ${escapeHtml(doc.number||'')}</h2>`;
+    if(doc.logo) html += `<img src="${doc.logo}" style="max-height:80px;display:block;margin-bottom:8px"/>`;
+    html += `<div><strong>From:</strong> ${escapeHtml(doc.from.name||'')}<br/>${escapeHtml(doc.from.address||'')}<br/>${escapeHtml(doc.from.phone||'')}</div>`;
+    html += `<div style="margin-top:8px"><strong>To:</strong> ${escapeHtml(doc.to.name||'')}<br/>${escapeHtml(doc.to.address||'')}<br/>${escapeHtml(doc.to.phone||'')}</div>`;
+    html += '<table border="1" cellspacing="0" cellpadding="6" style="width:100%;margin-top:8px"><thead><tr><th>Desc</th><th>HSN</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Line Disc%</th><th>Tax%</th><th>Amount</th></tr></thead><tbody>';
+    doc.items.forEach(it => {
+      const amt = computeLineAmount(it).toFixed(2);
+      html += `<tr><td>${escapeHtml(it.desc||'')}</td><td>${escapeHtml(it.hsn||'')}</td><td>${escapeHtml(it.unit||'')}</td><td>${it.qty||0}</td><td>${it.rate||0}</td><td>${it.lineDiscount||0}</td><td>${it.tax||0}</td><td>${amt}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    const subtotal = doc.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0)),0);
+    const lineDisc = doc.items.reduce((s,it)=> s+(((it.qty||0)*(it.rate||0))*(it.lineDiscount||0)/100),0);
+    const disc = (subtotal - lineDisc) * ((doc.discount||0)/100);
+    const tax = doc.items.reduce((s,it)=> s+(((it.qty||0)*(it.rate||0) - ((it.qty||0)*(it.rate||0))*(it.lineDiscount||0)/100) * (it.tax||0)/100),0);
+    html += `<div style="margin-top:8px"><strong>Totals:</strong><br/>Subtotal: ${fmt(subtotal)}<br/>Line Discount: ${fmt(lineDisc)}<br/>Global Discount: ${fmt(disc)}<br/>Tax: ${fmt(tax)}<br/>Shipping: ${fmt(doc.shipping||0)}<br/><strong>Grand: ${fmt(subtotal - lineDisc - disc + tax + (doc.shipping||0))}</strong></div>`;
+    html += `<div style="margin-top:8px"><strong>Terms:</strong><br/>${escapeHtml(doc.terms||'')}</div>`;
+    if(doc.upi) html += `<div style="margin-top:8px"><strong>UPI:</strong><br/>${escapeHtml(doc.upi)}</div>`;
+    html += '</div>';
+    return html;
+  }
 
   // ---------- Exports ----------
-  exportJson.addEventListener('click', ()=>{ const d = createDocumentObject(); saveBlob(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}), (d.number||'document') + '.json'); });
+  exportJson.addEventListener('click', ()=>{
+    const d = createDocumentObject();
+    saveBlob(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}), (d.number||'document') + '.json');
+  });
 
-  exportCsv.addEventListener('click', ()=>{ const d = createDocumentObject(); const rows = [['Description','HSN','Unit','Qty','Rate','Disc%','Tax%','Amount']]; d.items.forEach(it => rows.push([it.desc||'', it.hsn||'', it.unit||'', it.qty||0, it.rate||0, it.disc||0, (it.tax===null||it.tax===undefined)?d.defaultTax:it.tax, ((it.qty||0)*(it.rate||0)*(1 - ((it.disc||0)/100))*(1+(((it.tax===null||it.tax===undefined)?d.defaultTax:it.tax)/100))).toFixed(2)])); const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n'); saveBlob(new Blob([csv],{type:'text/csv'}), (d.number||'document') + '.csv'); });
+  exportCsv.addEventListener('click', ()=>{
+    const d = createDocumentObject();
+    const rows = [['Description','HSN','Unit','Qty','Rate','LineDisc%','Tax%','Amount']];
+    d.items.forEach(it => rows.push([it.desc||'', it.hsn||'', it.unit||'', it.qty||0, it.rate||0, it.lineDiscount||0, it.tax||0, computeLineAmount(it).toFixed(2)]));
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""') }"`).join(',')).join('\r\n');
+    saveBlob(new Blob([csv],{type:'text/csv'}), (d.number||'document') + '.csv');
+  });
 
-  exportDoc.addEventListener('click', ()=>{ const d = createDocumentObject(); const html = buildDocHTML(d); saveBlob(new Blob([html],{type:'application/msword'}), (d.number||'document') + '.doc'); });
+  exportDoc.addEventListener('click', ()=>{
+    const d = createDocumentObject();
+    const html = buildDocHTML(d);
+    saveBlob(new Blob([html],{type:'application/msword'}), (d.number||'document') + '.doc');
+  });
 
   $('#btnExportPDF').addEventListener('click', ()=> {
     try {
-      const d = createDocumentObject(); if(!window.jspdf) return alert('PDF engine not available'); const { jsPDF } = window.jspdf; const pdf = new jsPDF('p','mm','a4'); pdf.setFontSize(12); pdf.text(`${d.type} - ${d.number}`,14,14); pdf.setFontSize(10); pdf.text(`From: ${d.from.name}`,14,22); pdf.text(`To: ${d.to.name}`,14,28);
-      // build table
-      const head = [['Desc','HSN','Unit','Qty','Rate','Disc%','Tax%','Amount']];
-      const body = d.items.map(it=>{ const amt = ((it.qty||0)*(it.rate||0))*(1-((it.disc||0)/100))*(1+((((it.tax===null||it.tax===undefined)?d.defaultTax:it.tax)||0)/100)); return [it.desc||'', it.hsn||'', it.unit||'', String(it.qty||0), String(it.rate||0), String(it.disc||0), String((it.tax===null||it.tax===undefined)?d.defaultTax:it.tax), fmt(amt)]; });
-      pdf.autoTable({ startY:36, head: head, body: body, styles:{fontSize:9} });
-      const finalY = pdf.lastAutoTable.finalY || 36; pdf.setFontSize(11); pdf.text(`Grand Total: ${document.getElementById('grandTotal').textContent}`,14, finalY+10);
+      const d = createDocumentObject();
+      if(!window.jspdf) return alert('PDF engine not available');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p','pt','a4');
+      let y = 40; pdf.setFontSize(14); pdf.text(`${d.type} - ${d.number}`,40,y); y += 20;
+      if(d.logo) { pdf.addImage(d.logo, 'JPEG', 420, 30, 140, 60); }
+      pdf.setFontSize(10); pdf.text(`From: ${d.from.name}`,40,y); y+=14; pdf.text(`To: ${d.to.name}`,40,y); y+=20;
+
+      // prepare table
+      const cols = ['Desc','HSN','Unit','Qty','Rate','LineDisc%','Tax%','Amount'];
+      const rows = d.items.map(it => [it.desc||'', it.hsn||'', it.unit||'', String(it.qty||0), String(it.rate||0), String(it.lineDiscount||0), String(it.tax||0), computeLineAmount(it).toFixed(2)]);
+      pdf.autoTable({ head:[cols], body:rows, startY:y, styles:{fontSize:9} });
+      const finalY = pdf.lastAutoTable ? pdf.lastAutoTable.finalY + 10 : y + 100;
+      pdf.setFontSize(11); pdf.text(`Grand Total: ${document.getElementById('grandTotal').textContent}`,40, finalY + 10);
       pdf.save((d.number||'document')+'.pdf');
     } catch(e){ console.error(e); alert('PDF export failed: ' + e.message); }
   });
 
   // ---------- Sharing ----------
   btnShare.addEventListener('click', ()=>{
-    const d = createDocumentObject(); const lines = []; lines.push(`${d.type} • ${d.number}`); lines.push(`From: ${d.from.name}`); lines.push(`To: ${d.to.name}`); d.items.forEach(it => lines.push(`- ${it.desc || ''}, Qty:${it.qty}, Rate:${it.rate}, Tax:${(it.tax===null||it.tax===undefined)?d.defaultTax:it.tax}%`)); lines.push(`Grand Total: ${document.getElementById('grandTotal').textContent}`); const text = lines.join('\n'); if(navigator.share){ navigator.share({title: d.number, text}).catch(()=> window.open('https://wa.me/?text=' + encodeURIComponent(text))); } else { window.open('https://wa.me/?text=' + encodeURIComponent(text)); }
+    const d = createDocumentObject();
+    const lines = [];
+    lines.push(`${d.type} • ${d.number}`);
+    lines.push(`From: ${d.from.name}`);
+    lines.push(`To: ${d.to.name}`);
+    d.items.forEach(it => lines.push(`- ${it.desc || ''}, Qty:${it.qty}, Rate:${it.rate}, Tax:${it.tax}%`));
+    lines.push(`Grand Total: ${document.getElementById('grandTotal').textContent}`);
+    const text = lines.join('\n');
+    if(navigator.share){ navigator.share({title: d.number, text}).catch(()=> window.open('https://wa.me/?text=' + encodeURIComponent(text))); }
+    else { window.open('https://wa.me/?text=' + encodeURIComponent(text)); }
   });
 
-  // ---------- Import JSON ----------
-  $('#btnImport').addEventListener('click', ()=> importFile.click());
-  importFile.addEventListener('change', async e=>{ const f = e.target.files && e.target.files[0]; if(!f) return; try{ const txt = await f.text(); const j = JSON.parse(txt); // accept single doc or array
-    if(Array.isArray(j)){ docs = j.concat(docs); } else if(j && j.id){ docs.unshift(j); } else return alert('Invalid JSON'); persist(); renderLibrary(); alert('Imported'); } catch(e){ alert('Import failed: '+e.message); } });
-
   // ---------- Library actions ----------
-  function openDocumentForView(id){ const doc = docs.find(x => x.id === id); if(!doc) return alert('Document not found'); docViewContent.innerHTML = buildDocHTML(doc, true); docViewModal.style.display = 'flex'; docViewDownloadBtn.onclick = () => saveBlob(new Blob([JSON.stringify(doc,null,2)],{type:'application/json'}), (doc.number||'doc') + '.json'); docViewEditBtn.style.display = isEditable(doc) || admin.loggedIn ? 'inline-block' : 'none'; docViewEditBtn.onclick = () => { if(!isEditable(doc) && !admin.loggedIn) return alert('Locked for editing (24 hours passed). Admin only.'); currentDoc = JSON.parse(JSON.stringify(doc)); items = JSON.parse(JSON.stringify(doc.items || [])); logoData = doc.logo || ''; renderEditorFromDoc(); renderItemsTable(); calculateTotals(); docViewModal.style.display = 'none'; }; }
+  function deleteDoc(id){
+    const idx = docs.findIndex(d=>d.id===id);
+    if(idx===-1) return alert('Not found');
+    if(!admin.loggedIn) return alert('Only admin can delete');
+    if(!confirm('Delete document permanently?')) return;
+    docs.splice(idx,1); persist(); renderLibrary(); alert('Deleted');
+  }
 
   // ---------- Admin ----------
   btnAdmin.addEventListener('click', ()=> adminModal.style.display = 'flex');
   adminCloseBtn.addEventListener('click', ()=> adminModal.style.display = 'none');
-  adminLoginBtn.addEventListener('click', ()=> { const v = adminPassInput.value || ''; if(v === admin.password){ admin.loggedIn = true; sessionStorage.setItem('adminLogged','1'); adminModal.style.display = 'none'; alert('Admin login success'); renderLibrary(); } else alert('Wrong password'); });
-  adminSetBtn.addEventListener('click', ()=> { const nv = adminNewPass.value || ''; if(nv.length < 4) return alert('Password >= 4 chars'); admin.password = nv; localStorage.setItem('adminPass', nv); adminNewPass.value=''; alert('Admin password updated'); });
+  adminLoginBtn.addEventListener('click', ()=> {
+    const v = adminPassInput.value || '';
+    if(v === admin.password){ admin.loggedIn = true; sessionStorage.setItem('adminLogged','1'); adminModal.style.display = 'none'; alert('Admin login success'); renderLibrary(); }
+    else alert('Wrong password');
+  });
+  btnAdminSet.addEventListener('click', ()=> {
+    const nv = adminNewPass.value || '';
+    if(nv.length < 4) return alert('Password >= 4 chars');
+    admin.password = nv; localStorage.setItem('adminPass', nv); adminNewPass.value=''; alert('Admin password updated');
+  });
 
-  // ---------- UI events ----------
-  btnNew.addEventListener('click', ()=> { clearEditor(); currentDoc = null; renderItemsTable(); renderPreview(); });
-  btnLibrary.addEventListener('click', ()=> { renderLibrary(); });
+  // ---------- Settings ----------
+  saveSettings.addEventListener('click', ()=>{
+    settings.uiLang = uiLang.value;
+    settings.defaultTerms = defaultTerms.value;
+    settings.companyName = companyNameInput.value;
+    settings.companyPhone = companyPhoneInput.value;
+    settings.companyCurrency = companyCurrency.value;
+    settings.defaultTax = Number(defaultTax.value)||0;
+    persistSettings(); alert('Settings saved'); renderLibrary();
+  });
 
-  logoFile.addEventListener('change', async e => { const f = e.target.files && e.target.files[0]; if(!f) return; logoData = await readFileAsDataURL(f); logoPreview.src = logoData; logoSmall.src = logoData; logoSmall.style.display='inline-block'; });
+  // ---------- UPI QR ----------
+  genQrBtn.addEventListener('click', ()=>{
+    const val = upiInput.value || '';
+    if(!val) return alert('Enter UPI string or VPA');
+    const qr = new QRious({element: upiCanvas, value: val, size:160});
+  });
 
-  btnAddItem.addEventListener('click', ()=> { items.push({desc:'',hsn:'',unit:'pcs',qty:1,rate:0,disc:0,tax:null,image:''}); renderItemsTable(); });
+  // ---------- Import JSON ----------
+  importJsonBtn.addEventListener('click', ()=>{
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.addEventListener('change', async e=>{ const f = e.target.files[0]; if(!f) return; const txt = await f.text(); try{ const obj = JSON.parse(txt); if(Array.isArray(obj)) { // treat as list
+      docs = obj.concat(docs); persist(); renderLibrary(); alert('Imported list of documents'); }
+      else { docs.unshift(obj); persist(); renderLibrary(); alert('Imported document'); } } catch(err){ alert('Invalid JSON'); } }); inp.click();
+  });
 
-  btnSave.addEventListener('click', ()=> { const ok = saveCurrentDoc(); if(ok){ renderLibrary(); } });
+  // ---------- Utilities ----------
+  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  searchBox.addEventListener('input', ()=> renderLibrary()); filterType.addEventListener('change', ()=> renderLibrary());
+  // number to words (Indian system)
+  function numberToWordsIndian(num){
+    if(num===0) return 'Zero';
+    const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+    const b=['','', 'Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    function twoDigit(n){ if(n<20) return a[n]; let tens=Math.floor(n/10); let rest=n%10; return b[tens] + (rest? ' '+a[rest] : ''); }
+    function threeDigit(n){ let h=Math.floor(n/100); let rem=n%100; return (h? a[h] + ' Hundred' + (rem? ' and ' : '') : '') + (rem? twoDigit(rem) : ''); }
+    let words='';
+    const crore = Math.floor(num/10000000); if(crore){ words += numberToWordsIndian(crore) + ' Crore '; num = num % 10000000; }
+    const lakh = Math.floor(num/100000); if(lakh){ words += numberToWordsIndian(lakh) + ' Lakh '; num = num % 100000; }
+    const thousand = Math.floor(num/1000); if(thousand){ words += numberToWordsIndian(thousand) + ' Thousand '; num = num % 1000; }
+    if(num) words += threeDigit(num);
+    return words.trim();
+  }
 
-  saveSettings.addEventListener('click', ()=> { settings.uiLang = uiLang.value; settings.defaultTerms = defaultTerms.value; settings.companyName = companyNameInput.value; settings.companyAddress = companyAddressInput.value; settings.companyPhone = companyPhoneInput.value; persistSettings(); alert('Settings saved'); renderLibrary(); });
-
-  $('#clearAll').addEventListener('click', ()=> { if(!confirm('Clear all local data (docs and settings)?')) return; localStorage.clear(); sessionStorage.clear(); location.reload(); });
+  // ---------- boot / events ----------
+  function initApp(){
+    settings = Object.assign({uiLang:'en', defaultTerms:'Payment due within 30 days.', companyName:'Yash Enterprises', companyCurrency:'INR', defaultTax:0}, settings||{});
+    uiLang.value = settings.uiLang || 'en';
+    defaultTerms.value = settings.defaultTerms || settings.defaultTerms;
+    terms.value = settings.defaultTerms || settings.defaultTerms;
+    companyNameInput.value = settings.companyName || '';
+    companyPhoneInput.value = settings.companyPhone || '';
+    companyCurrency.value = settings.companyCurrency || 'INR';
+    defaultTax.value = settings.defaultTax || 0;
+    renderLibrary(); clearEditor();
+  }
 
   // close modals
   docViewCloseBtn.addEventListener('click', ()=> docViewModal.style.display='none');
   document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', (ev) => { if(ev.target === m) m.style.display = 'none'; }); });
 
-  // upi preview
-  function generateUpiQrDataUrl(upi){ try{ const pa = encodeURIComponent(`upi://pay?pa=${upi.id}&pn=${upi.name||''}`); const url = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${pa}`; return url; }catch(e){ return ''; } }
-  upiId.addEventListener('input', ()=> { upiPreview.innerHTML = ''; if(upiId.value){ const img = document.createElement('img'); img.src = generateUpiQrDataUrl({id:upiId.value,name:upiName.value}); img.style.width='100%'; img.style.height='100%'; upiPreview.appendChild(img); } }); upiName.addEventListener('input', ()=> upiId.dispatchEvent(new Event('input')));
+  // UI wiring
+  btnNew.addEventListener('click', ()=> { clearEditor(); currentDoc = null; renderItemsTable(); renderPreview(); });
+  btnLibrary.addEventListener('click', ()=> { renderLibrary(); });
+  logoFile.addEventListener('change', async e => { const f = e.target.files && e.target.files[0]; if(!f) return; logoData = await readFileAsDataURL(f); logoPreview.src = logoData; logoSmall.src = logoData; logoSmall.style.display='inline-block'; });
+  btnAddItem.addEventListener('click', ()=> { items.push({desc:'',hsn:'',unit:'pcs',qty:1,rate:0,lineDiscount:0,tax:settings.defaultTax||0,image:''}); renderItemsTable(); });
+  btnSave.addEventListener('click', ()=> { const ok = saveCurrentDoc(); if(ok){ renderLibrary(); } });
+  searchBox.addEventListener('input', ()=> renderLibrary()); filterType.addEventListener('change', ()=> renderLibrary());
+  document.getElementById('fromPhone').addEventListener('input', ()=> { if(fromPhone.value && !isPhone(fromPhone.value)) fromPhoneErr.style.display='block'; else fromPhoneErr.style.display='none'; });
+  document.getElementById('toPhone').addEventListener('input', ()=> { if(toPhone.value && !isPhone(toPhone.value)) toPhoneErr.style.display='block'; else toPhoneErr.style.display='none'; });
+  discount.addEventListener('input', ()=> calculateTotals()); shipping.addEventListener('input', ()=> calculateTotals()); defaultTax.addEventListener('input', ()=> { settings.defaultTax = Number(defaultTax.value)||0; persistSettings(); }); currency.addEventListener('change', ()=> calculateTotals()); roundOffSel.addEventListener('change', ()=> calculateTotals());
 
-  // ---------- Utilities ----------
-  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-  // initial settings load
-  function initApp(){ settings = Object.assign({uiLang:'en', defaultTerms:'Payment due within 30 days.', companyName:'Yash Enterprises', companyAddress:'', companyPhone:''}, settings||{}); uiLang.value = settings.uiLang || 'en'; defaultTerms.value = settings.defaultTerms || settings.defaultTerms; terms.value = settings.defaultTerms || settings.defaultTerms; companyNameInput.value = settings.companyName || ''; companyAddressInput.value = settings.companyAddress || ''; companyPhoneInput.value = settings.companyPhone || ''; renderLibrary(); clearEditor(); }
-
-  // self-tests: ensure PDF plugin available
-  function selfTest(){ try{ if(!window.jspdf) console.warn('jspdf not loaded'); console.log('self tests done'); }catch(e){} }
-
-  initApp(); selfTest();
+  initApp();
 
 })();
 </script>
