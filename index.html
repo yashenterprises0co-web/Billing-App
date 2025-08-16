@@ -3,56 +3,49 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Billing • Invoice / Challan / Quotation — Enhanced</title>
-<meta name="description" content="Single-file billing app — invoices, challans, quotations. 24-hour edit lock, admin override, PDF/Word export, GST split, UPI QR."/>
-<!-- jsPDF + AutoTable -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
-
+<title>Billing Pro — Invoice / Challan / Quotation (Final)</title>
+<meta name="description" content="Single-file billing app: invoices, challans, quotations. Auto-save, 24h lock with admin override, GST split, number-to-words (Indian), UPI QR, PDF/Word export, import, library.">
 <style>
-  :root{
-    --bg:#f7fbff;--card:#fff;--muted:#6b7280;--accent:#0b74ff;--accent-2:#0b61d9;
-    --success:#16a34a;--danger:#b91c1c;--glass: rgba(255,255,255,0.7);
-  }
+  :root{--bg:#f7fbff;--card:#fff;--muted:#6b7280;--accent:#0b74ff;--success:#16a34a;--danger:#dc2626;--warning:#d97706}
   *{box-sizing:border-box}
+  html,body{height:100%}
   body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--bg),#fff);color:#111}
-  .container{max-width:1200px;margin:18px auto;padding:16px}
+  .container{max-width:1280px;margin:18px auto;padding:16px}
   header{display:flex;justify-content:space-between;align-items:center;gap:12px}
   h1{font-size:18px;margin:0}
-  .toolbar{display:flex;gap:8px;align-items:center}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
   .btn.ghost{background:transparent;border:1px dashed #ddd;color:var(--muted)}
+  .btn.warn{background:var(--warning);color:#111}
+  .btn.danger{background:var(--danger)}
   .small{padding:6px 8px;font-size:13px}
+  .chip{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:600}
   .layout{display:grid;grid-template-columns:340px 1fr 360px;gap:16px;margin-top:16px}
   .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(13,17,23,0.04)}
-  label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+  label{display:block;font-size:12px;color:var(--muted);margin-top:8px}
   input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6edf3;margin-top:6px;font-size:14px}
   textarea{min-height:80px}
   table{width:100%;border-collapse:collapse;margin-top:12px}
   table th,table td{border:1px solid #e6edf3;padding:8px;text-align:left;vertical-align:middle}
   table th{background:#f1f5f9}
-  .image-thumb{max-width:90px;max-height:60px;border-radius:6px;display:block}
+  .image-thumb{max-width:90px;max-height:60px;border-radius:6px}
   .muted{color:var(--muted);font-size:13px}
-  .error{color:var(--danger);font-size:13px}
-  .doc-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #f3f4f6}
+  .error{color:#b91c1c;font-size:12px}
+  .doc-row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #f3f4f6}
   .tag{padding:4px 8px;border-radius:6px;background:#f1f5f9;font-size:12px}
-  .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:2000}
-  .modal .box{background:#fff;padding:18px;border-radius:8px;width:520px;max-width:94%;box-shadow:0 8px 30px rgba(2,6,23,.2);max-height:90vh;overflow:auto}
-  .right{position:relative}
-  .right h3{margin-top:0}
-  .flex{display:flex;gap:8px;align-items:center}
-  .right .doc-actions{display:flex;gap:6px}
-  .locked-banner{background:#fff4; padding:8px;border-radius:8px;margin-top:8px;border:1px dashed #f3f4f6}
-  .input-inline{display:flex;gap:8px}
-  .input-inline > *{flex:1}
-  .small-ghost{background:transparent;border:1px solid #ddd;padding:6px 8px;border-radius:8px}
-  .qr{max-width:150px;border:1px solid #eee;padding:6px;border-radius:6px}
-  @media (max-width:1000px){.layout{grid-template-columns:1fr}.right{order:3}}
-  /* print-friendly */
+  .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:50}
+  .modal.show{display:flex}
+  .modal .box{background:#fff;padding:18px;border-radius:10px;width:920px;max-width:92%;box-shadow:0 8px 30px rgba(2,6,23,.2);max-height:90vh;overflow:auto}
+  .row{display:flex;gap:8px;align-items:center}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .split{display:flex;gap:12px;align-items:center}
+  .right{order:3}
+  @media (max-width:1100px){.layout{grid-template-columns:1fr}.right{order:3}}
   @media print{
     body{background:#fff}
-    header,.toolbar,.right .panel,.btn,.ghost{display:none}
-    .panel{box-shadow:none;border-radius:0}
+    header,.right,.toolbar,#editorPanel .no-print{display:none!important}
+    .panel{box-shadow:none}
   }
 </style>
 </head>
@@ -60,85 +53,102 @@
 <div class="container">
   <header>
     <div>
-      <h1>Billing • Invoice / Challan / Quotation (Enhanced)</h1>
-      <div class="muted" id="appSubtitle">Document library • 24-hour edit lock • Admin override • PDF / Word export</div>
+      <h1>Billing Pro • Invoice / Challan / Quotation <span id="lockBadge" class="chip" style="display:none">Locked</span></h1>
+      <div class="muted" id="appSubtitle">All-in-one billing • Auto-save • 24-hour lock (admin override)</div>
     </div>
     <div class="toolbar">
-      <button class="btn" id="btnNew">New Document</button>
+      <button class="btn" id="btnNew" title="New document">New</button>
       <button class="btn ghost" id="btnLibrary">Library</button>
+      <button class="btn ghost" id="btnPrint">Print</button>
+      <button class="btn" id="btnAdmin">Admin</button>
       <select id="langSelect" title="UI language">
         <option value="en">English</option>
         <option value="hi">हिंदी</option>
         <option value="mr">मराठी</option>
       </select>
-      <button class="btn" id="btnAdmin">Admin</button>
     </div>
   </header>
 
   <div class="layout">
-    <!-- LEFT: Editor -->
+    <!-- LEFT: Editor Panel -->
     <aside class="panel" id="editorPanel">
-      <label>Document Type</label>
-      <select id="docType"><option>Invoice</option><option>Challan</option><option>Quotation</option></select>
+      <div class="grid2">
+        <div>
+          <label>Document Type</label>
+          <select id="docType"><option>Invoice</option><option>Challan</option><option>Quotation</option></select>
+        </div>
+        <div>
+          <label>Document No</label>
+          <input type="text" id="docNo" placeholder="INV-2025-001">
+        </div>
+      </div>
+      <div class="grid2">
+        <div>
+          <label>Date</label>
+          <input type="date" id="docDate">
+        </div>
+        <div>
+          <label>Currency</label>
+          <select id="currency">
+            <option value="INR">₹ INR</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+            <option value="GBP">£ GBP</option>
+            <option value="AED">د.إ AED</option>
+            <option value="AUD">A$ AUD</option>
+          </select>
+        </div>
+      </div>
 
       <label>Logo</label>
       <input type="file" id="logoFile" accept="image/*">
       <img id="logoPreview" style="max-width:140px;margin-top:8px;display:block;border-radius:6px" alt="logo preview">
 
-      <label>From (Company)</label>
+      <h4 style="margin:10px 0 0 0">From (Company)</h4>
       <input type="text" id="fromName" placeholder="Company name">
-      <label>From Address</label>
-      <textarea id="fromAddr"></textarea>
-      <label>Company Contact (10 digits)</label>
-      <input type="tel" id="fromPhone" placeholder="9876543210">
-      <div class="error" id="fromPhoneErr" style="display:none">Enter exactly 10 digits</div>
+      <textarea id="fromAddr" placeholder="Address"></textarea>
+      <div class="grid3">
+        <div>
+          <label>Company Contact (10 digits)</label>
+          <input type="tel" id="fromPhone" placeholder="9876543210">
+          <div class="error" id="fromPhoneErr" style="display:none">Enter exactly 10 digits</div>
+        </div>
+        <div>
+          <label>Default Tax %</label>
+          <input type="number" id="defaultTax" value="0" step="0.01">
+        </div>
+        <div>
+          <label>Round-off total</label>
+          <select id="roundOff"><option value="none">No</option><option value="nearest">Nearest</option><option value="down">Round Down</option><option value="up">Round Up</option></select>
+        </div>
+      </div>
 
-      <hr/>
-
-      <label>To (Customer)</label>
+      <h4 style="margin:10px 0 0 0">To (Customer)</h4>
       <input type="text" id="toName" placeholder="Customer name">
-      <label>To Address</label>
-      <textarea id="toAddr"></textarea>
+      <textarea id="toAddr" placeholder="Address"></textarea>
       <label>Customer Contact (10 digits)</label>
       <input type="tel" id="toPhone" placeholder="9876543210">
       <div class="error" id="toPhoneErr" style="display:none">Enter exactly 10 digits</div>
 
-      <label>Document No</label>
-      <input type="text" id="docNo" placeholder="INV-2025-001">
-      <label>Date</label>
-      <input type="date" id="docDate">
-
-      <label>Currency</label>
-      <select id="currency">
-        <option value="INR">₹ INR</option>
-        <option value="USD">$ USD</option>
-        <option value="EUR">€ EUR</option>
-        <option value="AED">د.إ AED</option>
-      </select>
-
-      <label>Default Tax % (global)</label>
-      <input type="number" id="defaultTax" value="0" step="0.01" min="0">
-
-      <label class="muted" style="margin-top:6px">Global discount (%) & round-off</label>
-      <div class="input-inline">
-        <input type="number" id="globalDiscount" value="0" step="0.01" min="0" placeholder="Global discount %">
-        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="roundOff"> Enable round-off</label>
+      <div class="grid2" style="margin-top:8px">
+        <div>
+          <label>Terms & Conditions</label>
+          <textarea id="terms">Payment due within 30 days.</textarea>
+        </div>
+        <div>
+          <label>UPI ID (for QR)</label>
+          <input type="text" id="upiId" placeholder="merchant@upi">
+          <label>UPI Name</label>
+          <input type="text" id="upiName" placeholder="Your Company">
+        </div>
       </div>
 
-      <label>Terms & Conditions</label>
-      <textarea id="terms">Payment due within 30 days.</textarea>
-
-      <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="display:flex;gap:8px;margin-top:10px" class="no-print">
         <button class="btn small" id="btnAddItem">Add Item</button>
         <button class="btn small" id="btnSave">Save</button>
         <button class="btn small" id="btnExportPDF">Export PDF</button>
-        <button class="btn small" id="btnExportDoc">Export Word (.doc)</button>
-        <button class="btn small" id="btnPrint">Print</button>
-      </div>
-
-      <div class="locked-banner" id="editLockedBanner" style="display:none">
-        <div><strong>This document is locked (editable only within 24 hours).</strong></div>
-        <div class="muted">Admin can override and edit locked documents.</div>
+        <button class="btn small" id="btnExportDoc">Export Word</button>
+        <button class="btn ghost small" id="btnImport">Import JSON</button>
       </div>
     </aside>
 
@@ -150,13 +160,14 @@
           <div>
             <div id="previewFromName" style="font-weight:700">Company</div>
             <div id="previewFromAddr" class="muted"></div>
+            <div id="previewFromPhone" class="muted"></div>
           </div>
         </div>
-        <div style="text-align:right;min-width:260px">
-          <div id="previewType" style="font-weight:700;font-size:16px">Invoice</div>
+        <div style="text-align:right;min-width:240px">
+          <div id="previewType" style="font-weight:800;font-size:18px">Invoice</div>
           <div class="muted">No: <span id="previewNo"></span></div>
           <div class="muted">Date: <span id="previewDate"></span></div>
-          <div id="gstSplit" class="muted" style="margin-top:6px"></div>
+          <div class="muted">Currency: <span id="previewCurr"></span></div>
         </div>
       </div>
 
@@ -167,37 +178,63 @@
         <div id="previewToPhone" class="muted"></div>
       </div>
 
-      <table id="itemsTable" aria-label="items">
+      <table id="itemsTable">
         <thead>
           <tr>
-            <th>Image</th><th>Description</th><th>HSN/SAC</th><th>Unit</th><th>Qty</th><th>Rate</th>
-            <th>Line Disc %</th><th>Line Tax %</th><th>Amount</th><th>Action</th>
+            <th>Image</th>
+            <th>Description</th>
+            <th>HSN/SAC</th>
+            <th>Unit</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th>Disc %</th>
+            <th>Tax %</th>
+            <th>Amount</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="itemsBody"></tbody>
       </table>
 
-      <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
-        <div style="flex:1">
-          <label>Shipping / Other charges</label>
-          <input type="number" id="shipping" value="0" step="0.01">
-          <label style="margin-top:8px">UPI ID (for QR)</label>
-          <input type="text" id="upiId" placeholder="merchant@bank">
+      <div style="display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <div>
+          <label>Global Discount %</label>
+          <input type="number" id="discount" value="0" step="0.01">
         </div>
-
-        <div style="margin-left:auto;text-align:right;min-width:260px">
+        <div>
+          <label>Shipping</label>
+          <input type="number" id="shipping" value="0" step="0.01">
+        </div>
+        <div>
+          <label>Other Charges</label>
+          <input type="number" id="other" value="0" step="0.01">
+        </div>
+        <div style="margin-left:auto;text-align:right">
           <div class="muted">Subtotal: <span id="subtotal">0.00</span></div>
+          <div class="muted">Line Discounts: <span id="lineDiscVal">0.00</span></div>
           <div class="muted">Global Discount: <span id="discountVal">0.00</span></div>
-          <div class="muted">Tax: <span id="taxVal">0.00</span></div>
+          <div class="muted">Tax: <span id="taxVal">0.00</span> <span id="gstSplit" class="muted"></span></div>
+          <div class="muted">Shipping + Other: <span id="shipOther">0.00</span></div>
           <div class="muted">Round Off: <span id="roundVal">0.00</span></div>
-          <div style="font-weight:700">Grand Total: <span id="grandTotal">0.00</span></div>
-          <div style="font-size:13px" id="grandWords" class="muted"></div>
+          <div style="font-weight:800;font-size:16px">Grand Total: <span id="grandTotal">0.00</span></div>
+          <div class="muted" id="amountWords" style="margin-top:6px"></div>
         </div>
       </div>
 
       <div style="margin-top:12px">
         <strong>Terms & Conditions</strong>
         <p class="muted" id="termsPreview"></p>
+      </div>
+
+      <div id="upiSection" style="margin-top:12px;display:none">
+        <strong>UPI Payment</strong>
+        <div class="split">
+          <div>
+            <div class="muted">Scan to pay</div>
+            <div id="upiQr"></div>
+          </div>
+          <div class="muted" id="upiText"></div>
+        </div>
       </div>
     </main>
 
@@ -207,7 +244,7 @@
 
       <div style="display:flex;gap:8px;margin-bottom:8px">
         <input type="text" id="searchBox" placeholder="Search by client or doc no" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e6edf3">
-        <select id="filterType" style="width:120px">
+        <select id="filterType" style="width:140px">
           <option value="">All</option><option>Invoice</option><option>Challan</option><option>Quotation</option>
         </select>
       </div>
@@ -217,50 +254,46 @@
       <hr style="margin:12px 0">
 
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn" id="btnShare">Share (WhatsApp/OS)</button>
-        <button class="btn ghost" id="btnImport">Import (.doc/.json)</button>
+        <button class="btn" id="btnShare">Share (Web Share/WhatsApp)</button>
+        <button class="btn ghost" id="btnDelete" title="Delete current (Admin only)">Delete Current</button>
       </div>
 
       <div style="margin-top:12px">
         <h4 class="muted">App Settings</h4>
         <label>Language (UI)</label>
         <select id="uiLang"><option value="en">English</option><option value="hi">हिंदी</option><option value="mr">मराठी</option></select>
-
-        <label style="margin-top:8px">Company Name</label>
-        <input id="companyName" type="text" placeholder="Yash Enterprises">
-
-        <label style="margin-top:8px">Company Address</label>
-        <textarea id="companyAddress" style="min-height:60px"></textarea>
-
-        <label style="margin-top:8px">Company Phone</label>
-        <input id="companyPhone" type="tel">
-
-        <label style="margin-top:8px">Default Terms</label>
-        <textarea id="defaultTerms" style="min-height:60px"></textarea>
-
-        <label style="margin-top:8px">Default Currency</label>
-        <select id="defaultCurrency"><option value="INR">INR</option><option value="USD">USD</option><option value="EUR">EUR</option></select>
-
-        <label style="margin-top:8px">Default Tax %</label>
-        <input id="defaultTaxSetting" type="number" step="0.01" min="0">
-
-        <label style="margin-top:8px">UPI ID (used for QR)</label>
-        <input id="defaultUpi" type="text" placeholder="merchant@bank">
-
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn small" id="saveSettings">Save Settings</button>
-          <button class="btn ghost small" id="resetApp">Reset App</button>
-        </div>
+        <label>Default Currency</label>
+        <select id="defCurrency">
+          <option value="INR">₹ INR</option>
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
+          <option value="AED">د.إ AED</option>
+          <option value="AUD">A$ AUD</option>
+        </select>
+        <label style="margin-top:8px">Custom Terms (Default)</label>
+        <textarea id="defaultTerms" style="min-height:80px"></textarea>
+        <label>Default Tax %</label>
+        <input type="number" id="defTax" value="0" step="0.01">
+        <label>Company Name (Default)</label>
+        <input type="text" id="defCompany">
+        <label>Company Address (Default)</label>
+        <textarea id="defAddress"></textarea>
+        <label>Company Phone (Default)</label>
+        <input type="tel" id="defPhone" placeholder="9876543210">
+        <label>Auto-save on change</label>
+        <select id="autoSave"><option value="1">On</option><option value="0">Off</option></select>
+        <button class="btn small" id="saveSettings">Save Settings</button>
       </div>
     </aside>
   </div>
 </div>
 
 <!-- Admin modal -->
-<div class="modal" id="adminModal" style="display:none">
-  <div class="box">
+<div class="modal" id="adminModal">
+  <div class="box" style="width:420px">
     <h3>Admin</h3>
-    <p class="muted">Admin can edit documents older than 24 hours, delete documents, and change settings.</p>
+    <p class="muted">Admin can edit/delete locked documents and change settings.</p>
     <label>Password</label>
     <input type="password" id="adminPassInput">
     <div style="display:flex;gap:8px;margin-top:8px">
@@ -276,14 +309,13 @@
 </div>
 
 <!-- Document view modal -->
-<div class="modal" id="docViewModal" style="display:none">
-  <div class="box" style="max-width:900px;width:92%;overflow:auto;max-height:90vh">
-    <div style="display:flex;justify-content:space-between;align-items:center">
+<div class="modal" id="docViewModal">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <h3 id="docViewTitle">Document</h3>
       <div>
         <button class="btn small" id="docViewEditBtn">Edit</button>
-        <button class="btn small" id="docViewDownloadPDFBtn">Download PDF</button>
-        <button class="btn small" id="docViewDownloadDocBtn">Download Word</button>
+        <button class="btn small" id="docViewDownloadBtn">Download JSON</button>
         <button class="btn ghost small" id="docViewCloseBtn">Close</button>
       </div>
     </div>
@@ -291,168 +323,147 @@
   </div>
 </div>
 
+<!-- QR, jsPDF & AutoTable CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js" crossorigin="anonymous"></script>
+
 <script>
-(() => {
+(function(){
   'use strict';
 
-  /* ---------- Utilities ---------- */
+  // ---------- Utilities ----------
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
-  const fmt = n => Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmt = (n, c) => Number(n||0).toLocaleString(undefined,{style:'currency',currency: c||currency.value || 'INR',minimumFractionDigits:2,maximumFractionDigits:2});
   const nowISO = () => new Date().toISOString();
-  const uid = () => 'd_' + Math.random().toString(36).slice(2,10);
-  const readFileAsDataURL = f => new Promise((res, rej) => { const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); });
   const saveBlob = (blob, name) => { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),30000); };
-  const isPhone = v => /^\d{10}$/.test((v||'').trim());
-  function addHours(iso, hours){ const d = new Date(iso); d.setHours(d.getHours()+hours); return d.toISOString(); }
-  function within24Hours(iso){ return new Date() < new Date(addHours(iso,24)); }
+  const toFixed2 = n => (Math.round((Number(n)||0)*100)/100);
+  const clampNum = (v,min,max)=> Math.min(max, Math.max(min, Number(v)||0));
 
-  /* ---------- Elements ---------- */
+  // Number to words (Indian system)
+  function inrToWords(num){
+    num = Math.round(Number(num)||0);
+    if(num===0) return 'Zero Rupees';
+    const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+    const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    function two(n){ if(n<20) return a[n]; const t=Math.floor(n/10), r=n%10; return b[t]+(r?(' '+a[r]):''); }
+    function three(n){ const h=Math.floor(n/100), r=n%100; return (h? a[h]+' Hundred' + (r?' ':'') : '') + (r? two(r):''); }
+    let out='';
+    const crore=Math.floor(num/10000000); num%=10000000;
+    const lakh=Math.floor(num/100000); num%=100000;
+    const thousand=Math.floor(num/1000); num%=1000;
+    const hundred=num;
+    if(crore) out+= three(crore)+' Crore ';
+    if(lakh) out+= three(lakh)+' Lakh ';
+    if(thousand) out+= two(thousand)+' Thousand ';
+    if(hundred) out+= three(hundred);
+    return out.trim() + ' Rupees Only';
+  }
+
+  // ---------- Elements ----------
   const btnNew = $('#btnNew'), btnLibrary = $('#btnLibrary'), btnAdmin = $('#btnAdmin');
-  const editorPanel = $('#editorPanel'), previewPanel = $('#previewPanel'), rightPanel = $('#rightPanel');
+  const btnPrint = $('#btnPrint');
+  const langSelect = $('#langSelect');
+  const editorPanel = $('#editorPanel'), previewPanel = $('#previewPanel');
   const docType = $('#docType'), logoFile = $('#logoFile'), logoPreview = $('#logoPreview'), logoSmall = $('#logoSmall');
   const fromName = $('#fromName'), fromAddr = $('#fromAddr'), fromPhone = $('#fromPhone'), fromPhoneErr = $('#fromPhoneErr');
   const toName = $('#toName'), toAddr = $('#toAddr'), toPhone = $('#toPhone'), toPhoneErr = $('#toPhoneErr');
   const docNo = $('#docNo'), docDate = $('#docDate'), currency = $('#currency'), defaultTax = $('#defaultTax'), terms = $('#terms');
-  const btnAddItem = $('#btnAddItem'), btnSave = $('#btnSave'), btnExportPDF = $('#btnExportPDF'), btnExportDoc = $('#btnExportDoc'), btnPrint = $('#btnPrint');
-  const itemsBody = $('#itemsBody'), shipping = $('#shipping'), globalDiscount = $('#globalDiscount'), roundOffChk = $('#roundOff');
-  const subtotalEl = $('#subtotal'), discountEl = $('#discountVal'), taxEl = $('#taxVal'), grandEl = $('#grandTotal'), roundEl = $('#roundVal'), grandWords = $('#grandWords');
-  const previewFromName = $('#previewFromName'), previewFromAddr = $('#previewFromAddr'), previewToName = $('#previewToName'), previewToAddr = $('#previewToAddr'), previewToPhone = $('#previewToPhone');
-  const previewType = $('#previewType'), previewNo = $('#previewNo'), previewDate = $('#previewDate'), termsPreview = $('#termsPreview'), gstSplitEl = $('#gstSplit');
+  const btnAddItem = $('#btnAddItem'), btnSave = $('#btnSave'), btnExportPDF = $('#btnExportPDF'), btnExportDoc = $('#btnExportDoc');
+  const btnImport = $('#btnImport');
+  const itemsBody = $('#itemsBody'), discount = $('#discount'), shipping = $('#shipping'), other = $('#other');
+  const subtotalEl = $('#subtotal'), discountEl = $('#discountVal'), taxEl = $('#taxVal'), grandEl = $('#grandTotal');
+  const lineDiscEl = $('#lineDiscVal'), shipOtherEl = $('#shipOther'), roundValEl = $('#roundVal');
+  const previewFromName = $('#previewFromName'), previewFromAddr = $('#previewFromAddr'), previewFromPhone = $('#previewFromPhone'), previewToName = $('#previewToName'), previewToAddr = $('#previewToAddr'), previewToPhone = $('#previewToPhone');
+  const previewType = $('#previewType'), previewNo = $('#previewNo'), previewDate = $('#previewDate'), previewCurr = $('#previewCurr'), termsPreview = $('#termsPreview');
+  const gstSplit = $('#gstSplit'), amountWords = $('#amountWords');
+  const upiSection = $('#upiSection'), upiQrEl = $('#upiQr'), upiText = $('#upiText'), upiId = $('#upiId'), upiName = $('#upiName');
   const libraryList = $('#libraryList'), searchBox = $('#searchBox'), filterType = $('#filterType');
-  const btnShare = $('#btnShare'), btnImport = $('#btnImport');
-  const uiLang = $('#uiLang'), companyName = $('#companyName'), companyAddress = $('#companyAddress'), companyPhone = $('#companyPhone');
-  const defaultTerms = $('#defaultTerms'), defaultCurrency = $('#defaultCurrency'), defaultTaxSetting = $('#defaultTaxSetting'), defaultUpi = $('#defaultUpi'), saveSettings = $('#saveSettings'), resetApp = $('#resetApp');
+  const btnShare = $('#btnShare'), btnDelete = $('#btnDelete');
+  const uiLang = $('#uiLang'), defCurrency = $('#defCurrency'), defaultTerms = $('#defaultTerms'), defTax = $('#defTax'), defCompany = $('#defCompany'), defAddress = $('#defAddress'), defPhone = $('#defPhone'), autoSave = $('#autoSave'), roundOffSel = $('#roundOff');
   const adminModal = $('#adminModal'), adminLoginBtn = $('#adminLoginBtn'), adminCloseBtn = $('#adminCloseBtn'), btnAdminSet = $('#adminSetBtn');
   const adminPassInput = $('#adminPassInput'), adminNewPass = $('#adminNewPass');
-  const docViewModal = $('#docViewModal'), docViewContent = $('#docViewContent'), docViewCloseBtn = $('#docViewCloseBtn');
-  const docViewEditBtn = $('#docViewEditBtn'), docViewDownloadPDFBtn = $('#docViewDownloadPDFBtn'), docViewDownloadDocBtn = $('#docViewDownloadDocBtn');
-  const editLockedBanner = $('#editLockedBanner'), upiIdInput = $('#upiId');
+  const docViewModal = $('#docViewModal'), docViewContent = $('#docViewContent'), docViewCloseBtn = $('#docViewCloseBtn'), docViewDownloadBtn = $('#docViewDownloadBtn'), docViewEditBtn = $('#docViewEditBtn');
+  const lockBadge = $('#lockBadge');
 
-  /* ---------- State ---------- */
-  let docs = JSON.parse(localStorage.getItem('docs') || '[]');
-  let settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-  let admin = {
-    loggedIn: sessionStorage.getItem('adminLogged') === '1',
-    password: localStorage.getItem('adminPass') || 'admin123'
-  };
-  let currentDoc = null; // editing doc object (clone)
-  let items = []; // current items array
-  let logoData = '';
+  // ---------- State ----------
+  let docs = JSON.parse(localStorage.getItem('docs')||'[]');             // saved documents
+  let settings = JSON.parse(localStorage.getItem('appSettings')||'{}');
+  settings = Object.assign({uiLang:'en', defaultTerms:'Payment due within 30 days.', companyName:'', companyAddress:'', companyPhone:'', defCurrency:'INR', defTax:0, autoSave:1}, settings||{});
+  let admin = { loggedIn: sessionStorage.getItem('adminLogged') === '1', password: localStorage.getItem('adminPass') || 'admin123' };
+  let currentDoc = null; // doc being edited (object) or null
+  let items = [];        // items list for current editor
+  let logoData = '';     // logo base64
+  let qr = null;         // QR instance
 
-  /* ---------- I18N (basic) ---------- */
-  const I18N = { en:{library:'Document Library', view:'View', edit:'Edit', locked:'Locked', editable:'Editable'}, hi:{library:'दस्तावेज़ पुस्तकालय', view:'देखें', edit:'संपादित करें', locked:'लॉक्ड', editable:'संपादन योग्य'}, mr:{library:'दस्तऐवज ग्रंथालय', view:'पाहा', edit:'संपादित करा', locked:'लॉक्ड', editable:'संपादन करण्यायोग्य'} };
-
-  /* ---------- Helpers: number to words (Indian) ---------- */
-  // Converts number to words (Indian system). Returns e.g., "One lakh twenty three thousand..."
-  function numberToWordsIndian(num){
-    num = Number(parseFloat(num).toFixed(2));
-    if(isNaN(num)) return '';
-    const a = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
-    const b = ['','', 'Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-    function twoDigit(n){
-      if(n<20) return a[n];
-      const tens = Math.floor(n/10);
-      const rest = n%10;
-      return b[tens] + (rest? ' ' + a[rest] : '');
-    }
-    function threeDigit(n){
-      const h = Math.floor(n/100);
-      const rest = n%100;
-      return (h? a[h] + ' Hundred' + (rest ? ' ' : '') : '') + (rest? twoDigit(rest) : '');
-    }
-    let integer = Math.floor(num);
-    let fraction = Math.round((num - integer) * 100);
-    if(integer === 0) var words = 'Zero';
-    else {
-      let parts = [];
-      const crore = Math.floor(integer / 10000000); integer %= 10000000;
-      const lakh = Math.floor(integer / 100000); integer %= 100000;
-      const thousand = Math.floor(integer / 1000); integer %= 1000;
-      const hundredRem = integer;
-      if(crore) parts.push(threeDigit(crore) + ' Crore');
-      if(lakh) parts.push(threeDigit(lakh) + ' Lakh');
-      if(thousand) parts.push(threeDigit(thousand) + ' Thousand');
-      if(hundredRem) parts.push(threeDigit(hundredRem));
-      var words = parts.join(' ');
-    }
-    if(fraction) words += ' and ' + fraction + '/100';
-    return words + ' only';
-  }
-
-  /* ---------- Helpers: escape html ---------- */
-  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-  /* ---------- Rendering & lifecycle ---------- */
+  // ---------- Helpers ----------
+  function uid(){ return 'd_' + Math.random().toString(36).slice(2,10); }
+  function isPhone(v){ return /^\d{10}$/.test((v||'').trim()); }
+  function addHours(iso, hours){ const d=new Date(iso); d.setHours(d.getHours()+hours); return d.toISOString(); }
+  function isEditable(doc){ if(!doc) return false; if(admin.loggedIn) return true; return new Date() < new Date(addHours(doc.createdAt,24)); }
   function persist(){ localStorage.setItem('docs', JSON.stringify(docs)); }
   function persistSettings(){ localStorage.setItem('appSettings', JSON.stringify(settings)); }
+  function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function setCurrentDoc(doc){
     currentDoc = doc ? JSON.parse(JSON.stringify(doc)) : null;
-    items = currentDoc ? JSON.parse(JSON.stringify(currentDoc.items || [])) : [{desc:'',hsn:'',unit:'pcs',qty:1,rate:0,disc:0,tax:settings.defaultTax||0,image:''}];
-    logoData = currentDoc ? currentDoc.logo || '' : (settings.companyLogo || '');
+    items = currentDoc ? (currentDoc.items||[]) : [];
+    logoData = currentDoc ? currentDoc.logo || '' : '';
     renderEditorFromDoc();
     renderItemsTable();
-    calculateTotals();
+    recalcTotals();
     renderPreview();
+    updateLockBadge();
   }
 
+  function updateLockBadge(){
+    const locked = currentDoc ? !isEditable(currentDoc) : false;
+    lockBadge.style.display = locked ? 'inline-block' : 'none';
+  }
+
+  // ---------- Rendering ----------
   function renderEditorFromDoc(){
     if(!currentDoc){
       docType.value = 'Invoice';
-      docNo.value = 'INV-' + new Date().getFullYear() + '-001';
+      docNo.value = 'INV-'+ new Date().getFullYear() + '-' + String((docs.filter(d=>d.type==='Invoice').length+1)).padStart(3,'0');
       docDate.value = new Date().toISOString().slice(0,10);
-      fromName.value = settings.companyName || 'Yash Enterprises';
+      currency.value = settings.defCurrency || 'INR';
+      fromName.value = settings.companyName || '';
       fromAddr.value = settings.companyAddress || '';
       fromPhone.value = settings.companyPhone || '';
+      defaultTax.value = settings.defTax || 0;
       toName.value = '';
       toAddr.value = '';
       toPhone.value = '';
-      currency.value = settings.currency || settings.defaultCurrency || 'INR';
-      defaultTax.value = settings.defaultTax || 0;
       terms.value = settings.defaultTerms || 'Payment due within 30 days.';
+      items = items.length ? items : [{desc:'',hsn:'',unit:'Nos',qty:1,rate:0,discount:0,tax: Number(defaultTax.value)||0,image:''}];
       logoPreview.src = logoData || '';
       logoSmall.style.display = logoData ? 'inline-block' : 'none';
-      logoSmall.src = logoData || '';
-      upiIdInput.value = settings.upi || '';
     } else {
       docType.value = currentDoc.type;
       docNo.value = currentDoc.number || '';
-      docDate.value = currentDoc.date || new Date().toISOString().slice(0,10);
+      docDate.value = currentDoc.date || '';
+      currency.value = currentDoc.currency || settings.defCurrency || 'INR';
+      defaultTax.value = currentDoc.defaultTax ?? settings.defTax ?? 0;
       fromName.value = currentDoc.from?.name || settings.companyName || '';
       fromAddr.value = currentDoc.from?.address || settings.companyAddress || '';
       fromPhone.value = currentDoc.from?.phone || settings.companyPhone || '';
       toName.value = currentDoc.to?.name || '';
       toAddr.value = currentDoc.to?.address || '';
       toPhone.value = currentDoc.to?.phone || '';
-      currency.value = currentDoc.currency || settings.currency || 'INR';
-      defaultTax.value = currentDoc.defaultTax !== undefined ? currentDoc.defaultTax : (settings.defaultTax || 0);
       terms.value = currentDoc.terms || settings.defaultTerms || '';
-      logoPreview.src = currentDoc.logo || settings.companyLogo || '';
-      logoSmall.style.display = (currentDoc.logo || settings.companyLogo) ? 'inline-block' : 'none';
-      logoSmall.src = currentDoc.logo || settings.companyLogo || '';
-      upiIdInput.value = currentDoc.upi || settings.upi || '';
-    }
-    // show lock banner if not editable
-    if(currentDoc && currentDoc.createdAt && !admin.loggedIn && !within24Hours(currentDoc.createdAt)){
-      editLockedBanner.style.display = 'block';
-      disableEditorInputs(true);
-    } else {
-      editLockedBanner.style.display = 'none';
-      disableEditorInputs(false);
+      items = JSON.parse(JSON.stringify(currentDoc.items || []));
+      logoData = currentDoc.logo || '';
+      logoPreview.src = logoData || '';
+      logoSmall.src = logoData || '';
+      logoSmall.style.display = logoData ? 'inline-block' : 'none';
     }
     renderPreview();
   }
 
-  function disableEditorInputs(disable){
-    // disable main inputs when locked (but keep view possible)
-    const inputs = [...editorPanel.querySelectorAll('input,select,textarea,button')];
-    inputs.forEach(el=>{
-      // allow Save button for admin only
-      if(el.id === 'btnSave'){ el.disabled = disable; }
-      else if(el.id === 'adminSetBtn' || el.id === 'adminLoginBtn') {}
-      else el.disabled = disable;
-    });
+  function newItem(){
+    return {desc:'',hsn:'',unit:'Nos',qty:1,rate:0,discount:0,tax: Number(defaultTax.value)||0,image:''};
   }
 
   function renderItemsTable(){
@@ -460,121 +471,132 @@
     items.forEach((it, idx) => {
       const tr = document.createElement('tr');
 
-      // image cell
+      // image
       const tdImg = document.createElement('td');
-      const fileIn = document.createElement('input'); fileIn.type='file'; fileIn.accept='image/*'; fileIn.style.width='100%';
+      const fileIn = document.createElement('input'); fileIn.type='file'; fileIn.accept='image/*'; fileIn.style.width='100px';
       const img = document.createElement('img'); img.className='image-thumb'; img.style.display = it.image ? 'block' : 'none'; if(it.image) img.src = it.image;
       fileIn.addEventListener('change', async e=>{
         const f = e.target.files && e.target.files[0]; if(!f) return;
-        try{ const d = await readFileAsDataURL(f); it.image = d; img.src = d; img.style.display = 'block'; calculateTotals(); renderPreview(); } catch(e){ console.error(e); }
+        try{ const d = await readFileAsDataURL(f); it.image = d; img.src = d; img.style.display='block'; updateAmount(idx); autoSaveMaybe(); } catch(e){ console.error(e); }
       });
       tdImg.appendChild(fileIn); tdImg.appendChild(img);
 
       // desc
-      const tdDesc = document.createElement('td'); const inpDesc = document.createElement('input'); inpDesc.type='text'; inpDesc.value = it.desc||''; inpDesc.addEventListener('input', e=>{ it.desc = e.target.value; renderPreview(); }); tdDesc.appendChild(inpDesc);
+      const tdDesc = document.createElement('td'); const inpDesc = document.createElement('input'); inpDesc.type='text'; inpDesc.value = it.desc||''; inpDesc.placeholder='Description'; inpDesc.addEventListener('input', e=>{ it.desc = e.target.value; renderPreview(); autoSaveMaybe(); }); tdDesc.appendChild(inpDesc);
 
       // hsn
-      const tdHsn = document.createElement('td'); const inpHsn = document.createElement('input'); inpHsn.type='text'; inpHsn.value = it.hsn||''; inpHsn.addEventListener('input', e=> it.hsn = e.target.value); tdHsn.appendChild(inpHsn);
+      const tdHsn = document.createElement('td'); const inpHsn = document.createElement('input'); inpHsn.type='text'; inpHsn.value = it.hsn||''; inpHsn.placeholder='HSN/SAC'; inpHsn.addEventListener('input', e=> {it.hsn = e.target.value; autoSaveMaybe();}); tdHsn.appendChild(inpHsn);
 
       // unit
-      const tdUnit = document.createElement('td'); const inpUnit = document.createElement('input'); inpUnit.type='text'; inpUnit.value = it.unit || 'pcs'; inpUnit.addEventListener('input', e=> it.unit = e.target.value); tdUnit.appendChild(inpUnit);
+      const tdUnit = document.createElement('td'); const inpUnit = document.createElement('input'); inpUnit.type='text'; inpUnit.value = it.unit||'Nos'; inpUnit.placeholder='Unit'; inpUnit.addEventListener('input', e=> {it.unit = e.target.value; autoSaveMaybe();}); tdUnit.appendChild(inpUnit);
 
       // qty
-      const tdQty = document.createElement('td'); const inpQty = document.createElement('input'); inpQty.type='number'; inpQty.step='0.01'; inpQty.min='0'; inpQty.value = it.qty||0; inpQty.addEventListener('input', e=>{ it.qty = Number(e.target.value)||0; calculateTotals(); renderPreview(); }); tdQty.appendChild(inpQty);
+      const tdQty = document.createElement('td'); const inpQty = document.createElement('input'); inpQty.type='number'; inpQty.step='0.01'; inpQty.min='0'; inpQty.value = it.qty||0; inpQty.addEventListener('input', e=>{ it.qty = Number(e.target.value)||0; updateAmount(idx); autoSaveMaybe(); }); tdQty.appendChild(inpQty);
 
       // rate
-      const tdRate = document.createElement('td'); const inpRate = document.createElement('input'); inpRate.type='number'; inpRate.step='0.01'; inpRate.min='0'; inpRate.value = it.rate||0; inpRate.addEventListener('input', e=>{ it.rate = Number(e.target.value)||0; calculateTotals(); renderPreview(); }); tdRate.appendChild(inpRate);
+      const tdRate = document.createElement('td'); const inpRate = document.createElement('input'); inpRate.type='number'; inpRate.step='0.01'; inpRate.min='0'; inpRate.value = it.rate||0; inpRate.addEventListener('input', e=>{ it.rate = Number(e.target.value)||0; updateAmount(idx); autoSaveMaybe(); }); tdRate.appendChild(inpRate);
 
-      // line discount %
-      const tdDisc = document.createElement('td'); const inpLDisc = document.createElement('input'); inpLDisc.type='number'; inpLDisc.step='0.01'; inpLDisc.min='0'; inpLDisc.value = it.disc||0; inpLDisc.addEventListener('input', e=>{ it.disc = Number(e.target.value)||0; calculateTotals(); renderPreview(); }); tdDisc.appendChild(inpLDisc);
+      // per-line discount
+      const tdLDisc = document.createElement('td'); const inpLDisc = document.createElement('input'); inpLDisc.type='number'; inpLDisc.step='0.01'; inpLDisc.min='0'; inpLDisc.value = it.discount||0; inpLDisc.addEventListener('input', e=>{ it.discount = clampNum(e.target.value,0,100); e.target.value = it.discount; updateAmount(idx); autoSaveMaybe(); }); tdLDisc.appendChild(inpLDisc);
 
-      // line tax %
-      const tdTax = document.createElement('td'); const inpLTax = document.createElement('input'); inpLTax.type='number'; inpLTax.step='0.01'; inpLTax.min='0'; inpLTax.value = it.tax!==undefined ? it.tax : (Number(defaultTax.value)||0); inpLTax.addEventListener('input', e=>{ it.tax = Number(e.target.value)||0; calculateTotals(); renderPreview(); }); tdTax.appendChild(inpLTax);
+      // tax
+      const tdTax = document.createElement('td'); const inpTax = document.createElement('input'); inpTax.type='number'; inpTax.step='0.01'; inpTax.min='0'; inpTax.value = it.tax||0; inpTax.addEventListener('input', e=>{ it.tax = Number(e.target.value)||0; updateAmount(idx); autoSaveMaybe(); }); tdTax.appendChild(inpTax);
 
       // amount
-      const tdAmt = document.createElement('td'); tdAmt.className = 'right-align';
-      tdAmt.textContent = fmt(calculateLineAmount(it));
+      const tdAmt = document.createElement('td'); tdAmt.className = 'right-align'; tdAmt.textContent = fmt(lineAmount(it), currency.value);
 
       // action
       const tdAct = document.createElement('td');
-      const rem = document.createElement('button'); rem.className='small-ghost'; rem.textContent='Remove'; rem.addEventListener('click', ()=>{ items.splice(idx,1); renderItemsTable(); calculateTotals(); });
+      const rem = document.createElement('button'); rem.className='small btn warn'; rem.textContent='Remove'; rem.addEventListener('click', ()=>{ items.splice(idx,1); renderItemsTable(); recalcTotals(); autoSaveMaybe(); });
       tdAct.appendChild(rem);
 
-      tr.appendChild(tdImg); tr.appendChild(tdDesc); tr.appendChild(tdHsn); tr.appendChild(tdUnit);
-      tr.appendChild(tdQty); tr.appendChild(tdRate); tr.appendChild(tdDisc); tr.appendChild(tdTax); tr.appendChild(tdAmt); tr.appendChild(tdAct);
+      tr.appendChild(tdImg); tr.appendChild(tdDesc); tr.appendChild(tdHsn); tr.appendChild(tdUnit); tr.appendChild(tdQty); tr.appendChild(tdRate); tr.appendChild(tdLDisc); tr.appendChild(tdTax); tr.appendChild(tdAmt); tr.appendChild(tdAct);
       itemsBody.appendChild(tr);
+
+      function updateAmount(){ tdAmt.textContent = fmt(lineAmount(it), currency.value); recalcTotals(false); renderPreview(); }
     });
   }
 
-  function calculateLineAmount(it){
-    const q = Number(it.qty)||0; const r = Number(it.rate)||0;
-    const lineBase = q * r;
-    const lineDisc = lineBase * ((Number(it.disc)||0)/100);
-    const taxable = lineBase - lineDisc;
-    const taxAmount = taxable * ((Number(it.tax)||0)/100);
-    const lineTotal = taxable + taxAmount;
-    return lineTotal;
+  function lineAmount(it){
+    const base = (Number(it.qty)||0) * (Number(it.rate)||0);
+    const lDisc = base * ((Number(it.discount)||0)/100);
+    const taxable = base - lDisc;
+    const taxAmt = taxable * ((Number(it.tax)||0)/100);
+    return toFixed2(taxable + taxAmt);
   }
 
-  function calculateTotals(renderPreviewFlag=true){
-    const sub = items.reduce((s,it)=> s + (Number(it.qty)||0)*(Number(it.rate)||0), 0);
-    const lineDiscountSum = items.reduce((s,it)=> {
-      const lb = (Number(it.qty)||0)*(Number(it.rate)||0);
-      return s + lb * ((Number(it.disc)||0)/100);
-    }, 0);
-    const tax = items.reduce((s,it)=> {
-      const lb = (Number(it.qty)||0)*(Number(it.rate)||0);
-      const ld = lb * ((Number(it.disc)||0)/100);
-      return s + (lb - ld) * ((Number(it.tax)||0)/100);
-    }, 0);
-    const ship = Number(shipping.value)||0;
-    const globalDiscPercent = Number(globalDiscount.value)||0;
-    const globalDiscAmount = (sub - lineDiscountSum) * (globalDiscPercent / 100);
-    let grand = sub - lineDiscountSum - globalDiscAmount + tax + ship;
-    let roundOff = 0;
-    if(roundOffChk.checked){
-      const rounded = Math.round(grand);
-      roundOff = rounded - grand;
+  async function readFileAsDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+
+  function recalcTotals(renderPrev = true){
+    // subtotal before any discount & tax
+    const sub = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0)),0);
+    const lineDisc = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0))*((Number(it.discount)||0)/100),0);
+    const tax = items.reduce((s,it)=> { const base=(Number(it.qty)||0)*(Number(it.rate)||0); const lDisc= base*((Number(it.discount)||0)/100); const taxable=base - lDisc; return s + (taxable*((Number(it.tax)||0)/100)); },0);
+    const gDisc = (sub - lineDisc) * ((Number(discount.value)||0)/100);
+    const shipOther = (Number(shipping.value)||0) + (Number(other.value)||0);
+    let grand = (sub - lineDisc - gDisc) + tax + shipOther;
+
+    // round-off
+    let roundShown = 0;
+    const ro = roundOffSel.value;
+    if(ro !== 'none'){
+      const rounded = ro==='nearest' ? Math.round(grand) : (ro==='down' ? Math.floor(grand) : Math.ceil(grand));
+      roundShown = toFixed2(rounded - grand);
       grand = rounded;
     }
-    subtotalEl.textContent = fmt(sub);
-    discountEl.textContent = fmt(lineDiscountSum + globalDiscAmount);
-    taxEl.textContent = fmt(tax);
-    roundEl.textContent = fmt(roundOff);
-    grandEl.textContent = fmt(grand);
-    grandWords.textContent = (currency.value === 'INR') ? numberToWordsIndian(Number(grand)) : '';
-    if(renderPreviewFlag) renderPreview();
-    return {sub, lineDiscountSum, globalDiscAmount, tax, ship, roundOff, grand};
+
+    subtotalEl.textContent = fmt(sub, currency.value);
+    lineDiscEl.textContent = fmt(lineDisc, currency.value);
+    discountEl.textContent = fmt(gDisc, currency.value);
+    taxEl.textContent = fmt(tax, currency.value);
+    shipOtherEl.textContent = fmt(shipOther, currency.value);
+    roundValEl.textContent = fmt(roundShown, currency.value);
+    grandEl.textContent = fmt(grand, currency.value);
+
+    // GST split when currency INR
+    if(currency.value==='INR'){
+      const cgst = tax/2, sgst = tax/2; // simplified split
+      gstSplit.textContent = `(CGST ${fmt(cgst,'INR')} + SGST ${fmt(sgst,'INR')})`;
+      amountWords.textContent = inrToWords(grand);
+    } else {
+      gstSplit.textContent = '';
+      amountWords.textContent = '';
+    }
+
+    if(renderPrev) renderPreview();
   }
 
   function renderPreview(){
     previewFromName.textContent = fromName.value || '';
     previewFromAddr.textContent = fromAddr.value || '';
+    previewFromPhone.textContent = fromPhone.value || '';
     previewToName.textContent = toName.value || '';
     previewToAddr.textContent = toAddr.value || '';
     previewToPhone.textContent = toPhone.value || '';
     previewType.textContent = docType.value;
     previewNo.textContent = docNo.value;
     previewDate.textContent = docDate.value;
+    previewCurr.textContent = currency.value;
     termsPreview.textContent = terms.value || settings.defaultTerms || '';
     logoSmall.style.display = logoData ? 'inline-block' : 'none';
     if(logoData){ logoSmall.src = logoData; logoPreview.src = logoData; }
-    // GST split if INR: show aggregated tax and split into CGST/SGST
-    if(currency.value === 'INR'){
-      const totalTax = items.reduce((s,it)=> {
-        const lb = (Number(it.qty)||0)*(Number(it.rate)||0);
-        const ld = lb * ((Number(it.disc)||0)/100);
-        return s + (lb - ld) * ((Number(it.tax)||0)/100);
-      }, 0);
-      // split equally into CGST/SGST (assuming intrastate). If percentage is IGST scenario user can adjust line tax accordingly.
-      const half = totalTax/2;
-      gstSplitEl.textContent = `GST split: CGST ${fmt(half)} + SGST ${fmt(half)} = ${fmt(totalTax)}`;
+
+    // UPI QR
+    const upi = (upiId.value||'').trim();
+    if(upi && currency.value==='INR'){
+      const amountStr = grandEl.textContent.replace(/[^0-9.]/g,'');
+      const url = `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(upiName.value||fromName.value||'')}&am=${encodeURIComponent(amountStr||'')}&cu=INR`;
+      upiSection.style.display = 'block';
+      upiText.textContent = url;
+      if(!qr){ qr = new QRCode(upiQrEl, {text:url,width:110,height:110}); }
+      else { upiQrEl.innerHTML=''; qr = new QRCode(upiQrEl, {text:url,width:110,height:110}); }
     } else {
-      gstSplitEl.textContent = '';
+      upiSection.style.display = 'none';
+      upiQrEl.innerHTML='';
+      qr = null;
     }
   }
 
-  /* ---------- Library rendering ---------- */
   function renderLibrary(){
     libraryList.innerHTML = '';
     const q = (searchBox.value||'').toLowerCase();
@@ -586,34 +608,30 @@
     });
     list.forEach(d => {
       const el = document.createElement('div'); el.className='doc-row';
-      const left = document.createElement('div'); left.innerHTML = `<div style="font-weight:700">${escapeHtml(d.type)} • ${escapeHtml(d.number||'')}</div><div class="muted">${escapeHtml(d.to?.name||'')} • ${new Date(d.createdAt).toLocaleString()}</div>`;
+      const left = document.createElement('div');
+      left.innerHTML = `<div style="font-weight:700">${escapeHtml(d.type)} • ${escapeHtml(d.number||'')}</div><div class="muted">${escapeHtml(d.to?.name||'')} • ${new Date(d.createdAt).toLocaleString()}</div>`;
       const right = document.createElement('div');
-      const total = (d.items||[]).reduce((s,it)=> s + ((it.qty||0)*(it.rate||0)*(1+(it.tax||0)/100) - ((it.qty||0)*(it.rate||0))*((it.disc||0)/100)),0);
-      const span = document.createElement('span'); span.className='tag'; span.textContent = fmt(total);
+      const total = (d.items||[]).reduce((s,it)=> s + lineAmount(it),0);
+      const span = document.createElement('span'); span.className='tag'; span.textContent = fmt(total, d.currency||currency.value);
       const status = document.createElement('div'); status.className='muted'; status.style.marginTop='4px';
-      status.textContent = (admin.loggedIn || within24Hours(d.createdAt)) ? I18N[settings.uiLang||'en'].editable : I18N[settings.uiLang||'en'].locked;
-      const viewBtn = document.createElement('button'); viewBtn.className='small'; viewBtn.textContent = I18N[settings.uiLang||'en'].view;
+      status.textContent = isEditable(d) ? 'Editable' : 'Locked';
+      const viewBtn = document.createElement('button'); viewBtn.className='small btn'; viewBtn.textContent = 'View';
       viewBtn.addEventListener('click', ()=> openDocView(d.id));
-      const shareBtn = document.createElement('button'); shareBtn.className='small-ghost'; shareBtn.textContent = 'Share'; shareBtn.addEventListener('click', ()=> shareDocShort(d));
-      const delBtn = document.createElement('button'); delBtn.className='small-ghost'; delBtn.textContent = 'Delete'; delBtn.addEventListener('click', ()=> deleteDoc(d.id));
-      right.appendChild(span); right.appendChild(status); right.appendChild(document.createElement('br')); right.appendChild(viewBtn); right.appendChild(shareBtn);
-      if(admin.loggedIn) right.appendChild(delBtn);
+      right.appendChild(span); right.appendChild(status); right.appendChild(document.createElement('br')); right.appendChild(viewBtn);
       el.appendChild(left); el.appendChild(right);
       libraryList.appendChild(el);
     });
   }
 
-  function deleteDoc(id){
-    if(!admin.loggedIn) return alert('Only admin can delete documents.');
-    if(!confirm('Delete this document?')) return;
-    docs = docs.filter(d=>d.id !== id);
-    persist(); renderLibrary(); alert('Deleted');
+  function clearEditor(){
+    currentDoc = null; items = [newItem()]; logoData=''; logoPreview.src=''; logoSmall.style.display='none';
+    renderEditorFromDoc(); renderItemsTable(); recalcTotals(); renderPreview(); updateLockBadge();
   }
 
-  /* ---------- Doc creation/save ---------- */
+  // ---------- Document lifecycle ----------
   function createDocumentObject(){
     const doc = {
-      id: currentDoc && currentDoc.id ? currentDoc.id : uid(),
+      id: currentDoc?.id || uid(),
       type: docType.value,
       number: docNo.value || ('DOC-'+Date.now()),
       date: docDate.value || new Date().toISOString().slice(0,10),
@@ -622,213 +640,218 @@
       from: { name: fromName.value, address: fromAddr.value, phone: fromPhone.value },
       to: { name: toName.value, address: toAddr.value, phone: toPhone.value },
       items: JSON.parse(JSON.stringify(items)),
-      discountGlobal: Number(globalDiscount.value)||0,
+      discount: Number(discount.value)||0,
       shipping: Number(shipping.value)||0,
+      other: Number(other.value)||0,
       terms: terms.value,
-      logo: logoData || '',
-      upi: upiIdInput.value || settings.upi || '',
-      createdAt: currentDoc && currentDoc.createdAt ? currentDoc.createdAt : nowISO(),
+      logo: logoData,
+      createdAt: currentDoc?.createdAt || nowISO(),
       lastModified: nowISO()
     };
     return doc;
   }
 
-  function saveCurrentDoc(){
-    // validation phones
-    if(fromPhone.value && !isPhone(fromPhone.value)){ fromPhoneErr.style.display='block'; alert('Company phone invalid'); return false; } else fromPhoneErr.style.display='none';
-    if(toPhone.value && !isPhone(toPhone.value)){ toPhoneErr.style.display='block'; alert('Customer phone invalid'); return false; } else toPhoneErr.style.display='none';
-    // defaultTax sanity
-    if(Number(defaultTax.value) < 0){ alert('Default tax cannot be negative'); return false; }
+  function saveCurrentDoc(showAlert=true){
+    // validation
+    if(fromPhone.value && !isPhone(fromPhone.value)){ fromPhoneErr.style.display='block'; if(showAlert) alert('Company phone invalid'); return false; } else fromPhoneErr.style.display='none';
+    if(toPhone.value && !isPhone(toPhone.value)){ toPhoneErr.style.display='block'; if(showAlert) alert('Customer phone invalid'); return false; } else toPhoneErr.style.display='none';
+
+    const newDoc = createDocumentObject();
     if(currentDoc && currentDoc.id){
       const idx = docs.findIndex(d => d.id === currentDoc.id);
-      if(idx === -1){ alert('Document not found'); return false; }
-      // lock check
-      if(!admin.loggedIn && !within24Hours(docs[idx].createdAt)){ alert('This document is locked (editable only within 24 hours). Admin can override.'); return false; }
-      const updated = createDocumentObject();
-      updated.id = docs[idx].id; updated.createdAt = docs[idx].createdAt; updated.lastModified = nowISO();
-      docs[idx] = updated;
+      if(idx === -1){ if(showAlert) alert('Document not found'); return false; }
+      if(!isEditable(docs[idx])){ if(showAlert) alert('This document is locked (editable only within 24 hours). Admin can override.'); return false; }
+      newDoc.id = docs[idx].id; newDoc.createdAt = docs[idx].createdAt; newDoc.lastModified = nowISO();
+      docs[idx] = newDoc; currentDoc = JSON.parse(JSON.stringify(newDoc));
     } else {
-      const doc = createDocumentObject();
-      docs.unshift(doc);
-      currentDoc = JSON.parse(JSON.stringify(doc));
+      docs.unshift(newDoc); currentDoc = JSON.parse(JSON.stringify(newDoc));
     }
-    persist();
-    renderLibrary();
-    alert('Saved locally');
+    persist(); renderLibrary(); updateLockBadge();
+    if(showAlert) alert('Saved locally');
     return true;
   }
 
-  /* ---------- Document view modal ---------- */
-  function buildDocHTML(doc, forPrint=false){
-    let html = `<div style="font-family:Inter,Arial,Helvetica,sans-serif">`;
-    html += `<div style="display:flex;justify-content:space-between;align-items:flex-start">`;
-    html += `<div><div style="font-weight:800;font-size:18px">${escapeHtml(doc.from?.name||'')}</div><div class="muted">${escapeHtml(doc.from?.address||'')}</div><div class="muted">Phone: ${escapeHtml(doc.from?.phone||'')}</div></div>`;
-    if(doc.logo){ html += `<div><img src="${doc.logo}" style="height:64px;border-radius:6px"/></div>`; }
-    html += `</div>`;
-    html += `<hr/>`;
-    html += `<div style="display:flex;justify-content:space-between"><div><strong>${escapeHtml(doc.type || '')} • ${escapeHtml(doc.number || '')}</strong><div class="muted">Date: ${escapeHtml(doc.date||'')}</div></div><div style="text-align:right"><strong>Bill To</strong><div style="font-weight:700">${escapeHtml(doc.to?.name||'')}</div><div class="muted">${escapeHtml(doc.to?.address||'')}</div><div class="muted">Phone: ${escapeHtml(doc.to?.phone||'')}</div></div></div>`;
-    html += `<table style="width:100%;border-collapse:collapse;margin-top:10px"><thead><tr style="background:#f1f5f9"><th>Desc</th><th>HSN</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Disc%</th><th>Tax%</th><th>Amount</th></tr></thead><tbody>`;
-    doc.items.forEach(it=>{
-      const amt = calculateLineAmount(it).toFixed(2);
-      html += `<tr><td>${escapeHtml(it.desc||'')}</td><td>${escapeHtml(it.hsn||'')}</td><td>${escapeHtml(it.unit||'')}</td><td>${it.qty||0}</td><td>${fmt(it.rate||0)}</td><td>${it.disc||0}</td><td>${it.tax||0}</td><td style="text-align:right">${fmt(amt)}</td></tr>`;
-    });
-    html += `</tbody></table>`;
-    const totals = (function(){
-      const sub = doc.items.reduce((s,it)=> s + (Number(it.qty)||0)*(Number(it.rate)||0),0);
-      const lineDiscSum = doc.items.reduce((s,it)=> { const lb=(Number(it.qty)||0)*(Number(it.rate)||0); return s + lb * ((Number(it.disc)||0)/100); },0);
-      const tax = doc.items.reduce((s,it)=> { const lb=(Number(it.qty)||0)*(Number(it.rate)||0); const ld = lb*((Number(it.disc)||0)/100); return s + (lb-ld)*((Number(it.tax)||0)/100); },0);
-      const globalDisc = (Number(doc.discountGlobal)||0);
-      const ship = Number(doc.shipping)||0;
-      const globalDiscAmount = (sub - lineDiscSum) * (globalDisc/100);
-      let grand = sub - lineDiscSum - globalDiscAmount + tax + ship;
-      let roundOff = 0;
-      if(doc.roundOff){ const rounded = Math.round(grand); roundOff = rounded - grand; grand = rounded; }
-      return {sub,lineDiscSum,globalDiscAmount,tax,ship,roundOff,grand};
-    })();
-    html += `<div style="margin-top:10px"><strong>Totals:</strong><div class="muted">Subtotal: ${fmt(totals.sub)}</div><div class="muted">Discount: ${fmt(totals.lineDiscSum + totals.globalDiscAmount)}</div><div class="muted">Tax: ${fmt(totals.tax)}</div><div class="muted">Shipping: ${fmt(totals.ship)}</div><div style="font-weight:700">Grand: ${fmt(totals.grand)}</div><div class="muted">${currency.value==='INR'? numberToWordsIndian(totals.grand):''}</div></div>`;
-    if(doc.upi){
-      // UPI QR via Google Charts API (simple)
-      const upiText = `upi://pay?pa=${encodeURIComponent(doc.upi)}&pn=${encodeURIComponent(doc.from?.name||'')}&tn=${encodeURIComponent(doc.number||'')}`;
-      const qrSrc = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(upiText)}`;
-      html += `<div style="margin-top:12px"><strong>UPI</strong><div style="display:flex;gap:12px;align-items:center"><img src="${qrSrc}" class="qr"><div class="muted">UPI ID: ${escapeHtml(doc.upi)}</div></div></div>`;
-    }
-    html += `<div style="margin-top:10px"><strong>Terms & Conditions</strong><div class="muted">${escapeHtml(doc.terms||'')}</div></div>`;
-    html += `</div>`;
-    return html;
-  }
+  function autoSaveMaybe(){ if(Number(settings.autoSave||1)===1){ saveCurrentDoc(false); } }
 
   function openDocView(id){
     const doc = docs.find(d => d.id === id);
     if(!doc) return alert('Document not found');
     docViewContent.innerHTML = buildDocHTML(doc, true);
-    docViewModal.style.display = 'flex';
-    docViewDownloadPDFBtn.onclick = () => exportDocToPDF(doc);
-    docViewDownloadDocBtn.onclick = () => exportDocToWord(doc);
-    docViewEditBtn.style.display = (admin.loggedIn || within24Hours(doc.createdAt)) ? 'inline-block' : 'none';
+    $('#docViewTitle').textContent = `${doc.type} • ${doc.number}`;
+    docViewModal.classList.add('show');
+    docViewDownloadBtn.onclick = () => saveBlob(new Blob([JSON.stringify(doc,null,2)],{type:'application/json'}), (doc.number||'doc') + '.json');
     docViewEditBtn.onclick = () => {
-      if(!admin.loggedIn && !within24Hours(doc.createdAt)) return alert('Locked for editing (24 hours passed). Admin only.');
+      if(!isEditable(doc) && !admin.loggedIn){ return alert('This document is locked for editing'); }
       setCurrentDoc(doc);
-      docViewModal.style.display = 'none';
+      docViewModal.classList.remove('show');
     };
   }
 
-  docViewCloseBtn.addEventListener('click', ()=> docViewModal.style.display = 'none');
+  function buildDocHTML(doc){
+    // return HTML markup for print/view
+    const rows = doc.items.map(it=>{
+      const base = (Number(it.qty)||0)*(Number(it.rate)||0);
+      const ldisc = base*((Number(it.discount)||0)/100);
+      const taxable = base - ldisc;
+      const tax = taxable*((Number(it.tax)||0)/100);
+      const amt = (taxable + tax).toFixed(2);
+      return `<tr><td>${escapeHtml(it.desc||'')}</td><td>${escapeHtml(it.hsn||'')}</td><td>${escapeHtml(it.unit||'')}</td><td>${it.qty||0}</td><td>${it.rate||0}</td><td>${it.discount||0}</td><td>${it.tax||0}</td><td>${amt}</td></tr>`;
+    }).join('');
 
-  /* ---------- Export: PDF (jsPDF + AutoTable) ---------- */
-  async function exportDocToPDF(doc){
-    try{
+    const subtotal = doc.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0)),0);
+    const lineDisc = doc.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0))*((it.discount||0)/100),0);
+    const tax = doc.items.reduce((s,it)=>{ const base=(it.qty||0)*(it.rate||0); const l=base*((it.discount||0)/100); return s + ((base-l)*((it.tax||0)/100)); },0);
+    const gDisc = (subtotal - lineDisc) * ((doc.discount||0)/100);
+    const totals = {
+      subtotal, lineDisc, gDisc, tax, shipOther:(doc.shipping||0)+(doc.other||0),
+    };
+    const grandRaw = (subtotal - lineDisc - gDisc) + tax + totals.shipOther;
+    const grand = grandRaw;
+
+    let gstSplitTxt = '';
+    if(doc.currency==='INR'){
+      const cgst = tax/2, sgst = tax/2; gstSplitTxt = `(CGST ${cgst.toFixed(2)} + SGST ${sgst.toFixed(2)})`;
+    }
+
+    return `
+      <div>
+        <h2>${escapeHtml(doc.type)} • ${escapeHtml(doc.number||'')}</h2>
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <div><strong>From:</strong> ${escapeHtml(doc.from.name||'')}<br/>${escapeHtml(doc.from.address||'')}<br/>${escapeHtml(doc.from.phone||'')}</div>
+          <div><strong>To:</strong> ${escapeHtml(doc.to.name||'')}<br/>${escapeHtml(doc.to.address||'')}<br/>${escapeHtml(doc.to.phone||'')}</div>
+          <div><strong>Date:</strong> ${escapeHtml(doc.date||'')}<br/><strong>Currency:</strong> ${escapeHtml(doc.currency||'')}</div>
+        </div>
+        <table border="1" cellspacing="0" cellpadding="6" style="width:100%;margin-top:8px">
+          <thead><tr><th>Desc</th><th>HSN</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Disc%</th><th>Tax%</th><th>Amount</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="margin-top:8px"><strong>Totals:</strong><br/>
+          Subtotal: ${subtotal.toFixed(2)}<br/>
+          Line Discounts: ${lineDisc.toFixed(2)}<br/>
+          Global Discount: ${gDisc.toFixed(2)}<br/>
+          Tax: ${tax.toFixed(2)} ${gstSplitTxt}<br/>
+          Shipping + Other: ${((doc.shipping||0)+(doc.other||0)).toFixed(2)}<br/>
+          <strong>Grand: ${grand.toFixed(2)} ${doc.currency||''}</strong>
+        </div>
+        <div style="margin-top:8px"><strong>Terms:</strong><br/>${escapeHtml(doc.terms||'')}</div>
+      </div>`;
+  }
+
+  // ---------- Exports ----------
+  btnExportPDF.addEventListener('click', ()=> {
+    try {
+      const d = createDocumentObject();
+      if(!window.jspdf) return alert('PDF engine not available');
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({unit:'pt',format:'a4'});
-      let y = 40;
-      pdf.setFontSize(14);
-      pdf.text(`${doc.type} - ${doc.number || ''}`, 40, y); y += 18;
+      const pdf = new jsPDF();
+
+      // header
+      pdf.setFontSize(16); pdf.text(`${d.type} - ${d.number}`,14,14);
       pdf.setFontSize(10);
-      pdf.text(`Date: ${doc.date}`, 40, y); y+=14;
-      pdf.text(`From: ${doc.from?.name || ''}`, 40, y); y+=12;
-      pdf.text(`To: ${doc.to?.name || ''}`, 300, 58);
-      y += 20;
-      // build table rows
-      const head = [['Desc','HSN','Unit','Qty','Rate','Disc%','Tax%','Amount']];
-      const body = doc.items.map(it => {
-        const amt = calculateLineAmount(it).toFixed(2);
-        return [it.desc||'', it.hsn||'', it.unit||'', String(it.qty||0), fmt(it.rate||0), String(it.disc||0), String(it.tax||0), fmt(amt)];
+      pdf.text(`From: ${d.from.name}`,14,22);
+      pdf.text(`To: ${d.to.name}`,14,28);
+      pdf.text(`Date: ${d.date}   Currency: ${d.currency}`,14,34);
+
+      // table
+      const rows = d.items.map(it=>{
+        const base = (Number(it.qty)||0)*(Number(it.rate)||0);
+        const ldisc = base*((Number(it.discount)||0)/100);
+        const taxable = base - ldisc;
+        const tax = taxable*((Number(it.tax)||0)/100);
+        const amt = (taxable+tax).toFixed(2);
+        return [it.desc||'', it.hsn||'', it.unit||'', String(it.qty||0), String(it.rate||0), String(it.discount||0), String(it.tax||0), amt];
       });
       pdf.autoTable({
-        startY: y,
-        head: head,
-        body: body,
-        styles:{fontSize:9},
-        headStyles:{fillColor:[241,245,249], textColor:[0,0,0]}
+        startY: 40,
+        head: [['Desc','HSN','Unit','Qty','Rate','Disc %','Tax %','Amount']],
+        body: rows,
+        styles:{fontSize:9}
       });
-      let finalY = pdf.lastAutoTable ? pdf.lastAutoTable.finalY + 10 : y + 10;
-      const totals = (function(){ const sub = doc.items.reduce((s,it)=> s + (Number(it.qty)||0)*(Number(it.rate)||0),0); const lineDiscSum = doc.items.reduce((s,it)=> { const lb=(Number(it.qty)||0)*(Number(it.rate)||0); return s + lb * ((Number(it.disc)||0)/100); },0); const tax = doc.items.reduce((s,it)=> { const lb=(Number(it.qty)||0)*(Number(it.rate)||0); const ld = lb*((Number(it.disc)||0)/100); return s + (lb-ld)*((Number(it.tax)||0)/100); },0); const globalDiscAmount = (sub - lineDiscSum) * ((Number(doc.discountGlobal)||0)/100); let grand = sub - lineDiscSum - globalDiscAmount + tax + Number(doc.shipping||0); let roundOff = 0; if(doc.roundOff){ const rounded = Math.round(grand); roundOff = rounded - grand; grand = rounded; } return {sub,lineDiscSum,globalDiscAmount,tax,ship:Number(doc.shipping||0),roundOff,grand}; })();
-      pdf.setFontSize(10);
-      pdf.text(`Subtotal: ${fmt(totals.sub)}`, 40, finalY); finalY += 12;
-      pdf.text(`Discount: ${fmt(totals.lineDiscSum + totals.globalDiscAmount)}`, 40, finalY); finalY += 12;
-      pdf.text(`Tax: ${fmt(totals.tax)}`, 40, finalY); finalY += 12;
-      pdf.text(`Shipping: ${fmt(totals.ship)}`, 40, finalY); finalY += 14;
-      pdf.setFontSize(12); pdf.text(`Grand Total: ${fmt(totals.grand)}`, 40, finalY); finalY += 14;
-      if(doc.upi){
-        const upiText = `upi://pay?pa=${encodeURIComponent(doc.upi)}&pn=${encodeURIComponent(doc.from?.name||'')}&tn=${encodeURIComponent(doc.number||'')}`;
-        const qr = `https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=${encodeURIComponent(upiText)}`;
-        // load QR image and add
-        const img = await fetch(qr).then(r=>r.blob()).then(b=>new Promise(res=>{
-          const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(b);
-        }));
-        pdf.addImage(img, 'PNG', 420, finalY-60, 120, 120);
+
+      // totals
+      let y = pdf.lastAutoTable.finalY + 6;
+      const sub = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0)),0);
+      const lineDisc = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0))*((Number(it.discount)||0)/100),0);
+      const tax = items.reduce((s,it)=> { const base=(Number(it.qty)||0)*(Number(it.rate)||0); const l= base*((Number(it.discount)||0)/100); return s + ((base - l)*((Number(it.tax)||0)/100)); },0);
+      const gDisc = (sub - lineDisc) * ((Number(discount.value)||0)/100);
+      const shipOther = (Number(shipping.value)||0) + (Number(other.value)||0);
+      const ro = roundOffSel.value;
+      let grand = (sub - lineDisc - gDisc) + tax + shipOther;
+      let roundShown = 0; if(ro!=='none'){ const rounded = ro==='nearest'?Math.round(grand):(ro==='down'?Math.floor(grand):Math.ceil(grand)); roundShown = (rounded - grand); grand = rounded; }
+
+      const gstTxt = currency.value==='INR'?` (CGST ${(tax/2).toFixed(2)} + SGST ${(tax/2).toFixed(2)})`:'';
+
+      pdf.text(`Subtotal: ${sub.toFixed(2)}`, 120, y); y+=5;
+      pdf.text(`Line Discounts: ${lineDisc.toFixed(2)}`, 120, y); y+=5;
+      pdf.text(`Global Discount: ${gDisc.toFixed(2)}`, 120, y); y+=5;
+      pdf.text(`Tax: ${tax.toFixed(2)}${gstTxt}`, 120, y); y+=5;
+      pdf.text(`Shipping + Other: ${shipOther.toFixed(2)}`, 120, y); y+=5;
+      pdf.text(`Round Off: ${roundShown.toFixed(2)}`, 120, y); y+=6;
+      pdf.setFontSize(12); pdf.text(`Grand Total: ${grand.toFixed(2)} ${currency.value}`, 120, y);
+
+      if(currency.value==='INR'){
+        pdf.setFontSize(10); y+=6; pdf.text(`Amount in words: ${inrToWords(grand)}`,14,y);
       }
-      pdf.save((doc.number||'document')+'.pdf');
-    }catch(e){ console.error(e); alert('PDF export failed: '+ e.message); }
-  }
 
-  /* ---------- Export: Word (.doc) ---------- */
-  function exportDocToWord(doc){
-    const html = buildDocHTML(doc, true);
-    const blob = new Blob([html], {type: 'application/msword'});
-    saveBlob(blob, (doc.number || 'document') + '.doc');
-  }
+      pdf.save((d.number||'document')+'.pdf');
+    } catch(e){
+      console.error(e); alert('PDF export failed: ' + e.message);
+    }
+  });
 
-  /* ---------- Share ---------- */
-  function shareDocShort(doc){
-    const summary = [`${doc.type} • ${doc.number}`, `From: ${doc.from?.name || ''}`, `To: ${doc.to?.name || ''}`];
-    doc.items.forEach(it => summary.push(`- ${it.desc || ''} x${it.qty} @ ${fmt(it.rate)} (tax ${it.tax}%)`));
-    summary.push(`Grand Total: ${calculateTotals(false).grand}`);
-    const text = summary.join('\n');
+  btnExportDoc.addEventListener('click', ()=>{
+    const d = createDocumentObject();
+    const html = buildDocHTML(d);
+    const full = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(d.number||'document')}</title></head><body>${html}</body></html>`;
+    saveBlob(new Blob([full],{type:'application/msword'}), (d.number||'document') + '.doc');
+  });
+
+  // ---------- Import ----------
+  btnImport.addEventListener('click', ()=>{
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+    inp.onchange = async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      try{ const txt = await f.text(); const obj = JSON.parse(txt);
+        if(Array.isArray(obj)){ docs = obj.concat(docs); persist(); renderLibrary(); alert('Imported document list'); }
+        else if(obj && typeof obj==='object'){ setCurrentDoc(obj); saveCurrentDoc(); alert('Imported document'); }
+      } catch(err){ alert('Import failed: '+err.message); }
+    };
+    inp.click();
+  });
+
+  // ---------- Sharing ----------
+  btnShare.addEventListener('click', ()=>{
+    const d = createDocumentObject();
+    const lines = [];
+    lines.push(`${d.type} • ${d.number}`);
+    lines.push(`From: ${d.from.name}`);
+    lines.push(`To: ${d.to.name}`);
+    d.items.forEach(it => lines.push(`- ${it.desc||''}, Qty:${it.qty}, Rate:${it.rate}, Disc:${it.discount}%, Tax:${it.tax}%`));
+    const grandText = grandEl.textContent.replace(/\s+/g,' ');
+    lines.push(`Grand Total: ${grandText}`);
+    const text = lines.join('\n');
     if(navigator.share){
-      navigator.share({title: doc.number, text}).catch(()=> window.open('https://wa.me/?text=' + encodeURIComponent(text)));
+      navigator.share({title: d.number, text}).catch(()=> window.open('https://wa.me/?text=' + encodeURIComponent(text)));
     } else {
       window.open('https://wa.me/?text=' + encodeURIComponent(text));
     }
-  }
-
-  /* ---------- UI events ---------- */
-  btnNew.addEventListener('click', ()=> { setCurrentDoc(null); });
-
-  btnLibrary.addEventListener('click', ()=> { renderLibrary(); window.scrollTo({top:0,behavior:'smooth'}); });
-
-  logoFile.addEventListener('change', async e => {
-    const f = e.target.files && e.target.files[0]; if(!f) return;
-    logoData = await readFileAsDataURL(f); logoPreview.src = logoData; logoSmall.src = logoData; logoSmall.style.display='inline-block';
-    // save to settings automatically
-    settings.companyLogo = logoData; persistSettings();
   });
 
-  btnAddItem.addEventListener('click', ()=> { items.push({desc:'',hsn:'',unit:'pcs',qty:1,rate:0,disc:0,tax:Number(defaultTax.value)||0,image:''}); renderItemsTable(); calculateTotals(); });
-
-  btnSave.addEventListener('click', ()=> { const ok = saveCurrentDoc(); if(ok) renderLibrary(); });
-
-  searchBox.addEventListener('input', ()=> renderLibrary());
-  filterType.addEventListener('change', ()=> renderLibrary());
-
-  saveSettings.addEventListener('click', ()=> {
-    settings.uiLang = uiLang.value;
-    settings.companyName = companyName.value;
-    settings.companyAddress = companyAddress.value;
-    settings.companyPhone = companyPhone.value;
-    settings.defaultTerms = defaultTerms.value;
-    settings.currency = defaultCurrency.value;
-    settings.defaultTax = Number(defaultTaxSetting.value)||0;
-    settings.upi = defaultUpi.value || '';
-    settings.companyLogo = settings.companyLogo || logoData || '';
-    persistSettings();
-    alert('Settings saved');
-    // refresh editor defaults
-    renderEditorFromDoc();
-    renderLibrary();
+  // ---------- Delete (Admin) ----------
+  btnDelete.addEventListener('click', ()=>{
+    if(!currentDoc) return alert('No current document');
+    if(!admin.loggedIn) return alert('Admin only');
+    const idx = docs.findIndex(d=>d.id===currentDoc.id);
+    if(idx===-1) return alert('Not found');
+    if(confirm('Delete current document?')){ docs.splice(idx,1); persist(); clearEditor(); renderLibrary(); alert('Deleted'); }
   });
 
-  resetApp.addEventListener('click', ()=> {
-    if(!confirm('Reset will clear all local data (documents, settings). Continue?')) return;
-    localStorage.clear(); sessionStorage.clear();
-    location.reload();
-  });
-
-  // admin handlers
-  btnAdmin.addEventListener('click', ()=> adminModal.style.display = 'flex');
-  adminCloseBtn.addEventListener('click', ()=> adminModal.style.display = 'none');
+  // ---------- Admin ----------
+  btnAdmin.addEventListener('click', ()=> adminModal.classList.add('show'));
+  adminCloseBtn.addEventListener('click', ()=> adminModal.classList.remove('show'));
   adminLoginBtn.addEventListener('click', ()=> {
     const v = adminPassInput.value || '';
-    if(v === admin.password){ admin.loggedIn = true; sessionStorage.setItem('adminLogged','1'); adminModal.style.display = 'none'; alert('Admin login success'); renderLibrary(); renderEditorFromDoc(); }
+    if(v === admin.password){ admin.loggedIn = true; sessionStorage.setItem('adminLogged','1'); adminModal.classList.remove('show'); alert('Admin login success'); renderLibrary(); updateLockBadge(); }
     else alert('Wrong password');
   });
   btnAdminSet.addEventListener('click', ()=> {
@@ -837,89 +860,68 @@
     admin.password = nv; localStorage.setItem('adminPass', nv); adminNewPass.value=''; alert('Admin password updated');
   });
 
-  btnExportPDF.addEventListener('click', ()=> {
-    const doc = createDocumentObject();
-    exportDocToPDF(doc);
+  // ---------- UI events ----------
+  btnNew.addEventListener('click', ()=> { clearEditor(); });
+  btnLibrary.addEventListener('click', ()=> { renderLibrary(); });
+  btnPrint.addEventListener('click', ()=> window.print());
+
+  logoFile.addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    logoData = await readFileAsDataURL(f); logoPreview.src = logoData; logoSmall.src = logoData; logoSmall.style.display='inline-block'; autoSaveMaybe();
   });
 
-  btnExportDoc.addEventListener('click', ()=> {
-    const doc = createDocumentObject();
-    exportDocToWord(doc);
+  btnAddItem.addEventListener('click', ()=> { items.push(newItem()); renderItemsTable(); recalcTotals(); autoSaveMaybe(); });
+
+  btnSave.addEventListener('click', ()=> { const ok = saveCurrentDoc(); if(ok){ renderLibrary(); }});
+
+  // reactive fields -> preview + autosave
+  [docType, docNo, docDate, currency, defaultTax, fromName, fromAddr, fromPhone, toName, toAddr, toPhone, terms, discount, shipping, other, upiId, upiName, roundOffSel].forEach(el=>{
+    el.addEventListener('input', ()=>{ renderPreview(); recalcTotals(); autoSaveMaybe(); if((el===docType || el===docNo) && currentDoc){ currentDoc.type=docType.value; currentDoc.number=docNo.value; }});
+    el.addEventListener('change', ()=>{ renderPreview(); recalcTotals(); autoSaveMaybe(); });
   });
 
-  btnPrint.addEventListener('click', ()=> {
-    // open a print window with built doc
-    const doc = createDocumentObject();
-    const w = window.open('', '_blank');
-    const html = `<html><head><title>${doc.number}</title><meta charset="utf-8"><style>body{font-family:Inter,Arial,Helvetica,sans-serif;padding:20px}</style></head><body>${buildDocHTML(doc,true)}</body></html>`;
-    w.document.open(); w.document.write(html); w.document.close();
-    w.focus();
-    setTimeout(()=> w.print(), 600);
-  });
+  searchBox.addEventListener('input', ()=> renderLibrary());
+  filterType.addEventListener('change', ()=> renderLibrary());
 
-  btnShare.addEventListener('click', ()=> {
-    const d = createDocumentObject();
-    shareDocShort(d);
-  });
-
-  btnImport.addEventListener('click', ()=> {
-    const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,.doc,.html';
-    inp.onchange = async e => {
-      const f = e.target.files[0]; if(!f) return;
-      const txt = await f.text();
-      try{
-        const parsed = JSON.parse(txt);
-        // if it's our doc format
-        if(parsed && parsed.number && parsed.items){
-          docs.unshift(parsed);
-          persist(); renderLibrary(); alert('Imported document (JSON)');
-        } else {
-          alert('Unknown file format — only JSON exports supported for import.');
-        }
-      }catch(err){ alert('Import failed: ' + err.message); }
-    };
-    inp.click();
-  });
-
-  /* ---------- Document view exports ---------- */
-  docViewDownloadPDFBtn.addEventListener('click', ()=> {
-    const title = docViewTitle.textContent || 'document'; // fallback
-  });
-
-  /* ---------- Init ---------- */
-  function init(){
-    settings = Object.assign({
-      uiLang:'en',
-      defaultTerms:'Payment due within 30 days.',
-      companyName:'Yash Enterprises',
-      companyAddress:'',
-      companyPhone:'',
-      defaultCurrency:'INR',
-      currency:'INR',
-      defaultTax:0,
-      upi:'',
-      companyLogo:''
-    }, settings || {});
-    // populate settings UI
+  // Settings load/save
+  function loadSettingsIntoUI(){
     uiLang.value = settings.uiLang || 'en';
-    companyName.value = settings.companyName || '';
-    companyAddress.value = settings.companyAddress || '';
-    companyPhone.value = settings.companyPhone || '';
-    defaultTerms.value = settings.defaultTerms || '';
-    defaultCurrency.value = settings.defaultCurrency || 'INR';
-    defaultTaxSetting.value = settings.defaultTax || 0;
-    defaultUpi.value = settings.upi || '';
-    // apply defaults
-    currency.value = settings.currency || settings.defaultCurrency || 'INR';
-    defaultTax.value = settings.defaultTax || 0;
-    // initial doc
-    setCurrentDoc(null);
-    renderLibrary();
+    defaultTerms.value = settings.defaultTerms || 'Payment due within 30 days.';
+    defCurrency.value = settings.defCurrency || 'INR';
+    defTax.value = settings.defTax || 0;
+    defCompany.value = settings.companyName || '';
+    defAddress.value = settings.companyAddress || '';
+    defPhone.value = settings.companyPhone || '';
+    autoSave.value = String(settings.autoSave||1);
   }
-  init();
 
-  // close modals on overlay click
-  document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', ev => { if(ev.target === m) m.style.display = 'none'; }));
+  $('#saveSettings').addEventListener('click', ()=>{
+    settings.uiLang = uiLang.value;
+    settings.defaultTerms = defaultTerms.value;
+    settings.defCurrency = defCurrency.value;
+    settings.defTax = Number(defTax.value)||0;
+    settings.companyName = defCompany.value;
+    settings.companyAddress = defAddress.value;
+    settings.companyPhone = defPhone.value;
+    settings.autoSave = Number(autoSave.value)||1;
+    persistSettings();
+    alert('Settings saved');
+    renderLibrary();
+  });
+
+  // initial boot
+  function initApp(){
+    loadSettingsIntoUI();
+    docDate.value = new Date().toISOString().slice(0,10);
+    renderLibrary();
+    clearEditor();
+  }
+
+  // Close modals when clicking outside
+  [adminModal, docViewModal].forEach(m => { m.addEventListener('click', (ev) => { if(ev.target === m) m.classList.remove('show'); }); });
+  docViewCloseBtn.addEventListener('click', ()=> docViewModal.classList.remove('show'));
+
+  initApp();
 })();
 </script>
 </body>
