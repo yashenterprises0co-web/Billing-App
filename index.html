@@ -768,3 +768,773 @@
   </script>
 </body>
 </html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>myBillBook — Smart Billing (Single File)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6f8fb; --panel:#fff; --muted:#6b7280; --brand:#0b74ff; --accent:#0f172a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--accent)}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:#fff;border-bottom:1px solid #e6edf3;position:sticky;top:0;z-index:50}
+    header h1{margin:0;font-size:18px}
+    .nav{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--brand);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn.ghost{background:transparent;border:1px solid #e6edf3;color:var(--muted)}
+    .small{padding:6px 8px;font-size:13px}
+    #app{display:grid;grid-template-columns:420px 1fr 360px;gap:14px;padding:16px;max-width:1400px;margin:14px auto}
+    .panel{background:var(--panel);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(13,17,23,0.04);border:1px solid #eef2f7}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+    input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6edf3;margin-top:6px;font-size:14px;background:#fff}
+    textarea{min-height:80px}
+    .muted{color:var(--muted);font-size:13px}
+    .item-card{background:#fff;border:1px solid #eef2f7;border-radius:10px;padding:12px;margin-bottom:10px;display:block}
+    .item-row{display:grid;grid-template-columns:1fr 120px 80px 100px 100px;gap:8px;align-items:center}
+    .item-row .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .item-row input{height:40px}
+    .item-row2{display:grid;grid-template-columns:120px 120px 1fr;gap:8px;margin-top:8px;align-items:center}
+    .image-thumb{max-width:140px;max-height:80px;border-radius:8px;border:1px solid #eef2f7;padding:4px;background:#fbfdff}
+    .right-align{text-align:right}
+    .tag{padding:6px 10px;border-radius:999px;background:#f1f8ff;font-size:13px;color:#054a91}
+    .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:120;display:none}
+    .modal.show{display:flex}
+    .modal .box{background:#fff;padding:18px;border-radius:8px;width:820px;max-width:96%;max-height:90vh;overflow:auto}
+    #statusToast{position:fixed;right:18px;bottom:18px;background:#0b74ff;color:#fff;padding:10px 14px;border-radius:8px;display:none;z-index:140}
+    @media (max-width:1200px){ #app{grid-template-columns:1fr;padding:8px} .right{order:3} .panel{padding:12px} }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;gap:12px;align-items:center">
+      <h1>myBillBook</h1>
+      <div id="lockBadge" style="display:none;padding:6px 8px;border-radius:8px;background:#fff9eb;color:#7a3e00;font-size:13px;border:1px solid #fde68a">Locked (24h)</div>
+    </div>
+    <div class="nav">
+      <button id="navInvoice" class="btn small">Create Invoice</button>
+      <button id="navChallan" class="btn small">Create Challan</button>
+      <button id="navQuotation" class="btn small">Create Quotation</button>
+      <button id="btnLibrary" class="btn small ghost">Library</button>
+      <button id="btnSettings" class="btn small ghost">Settings</button>
+      <button id="btnAdmin" class="btn small ghost">Admin</button>
+    </div>
+  </header>
+
+  <div id="app">
+    <!-- LEFT: Form -->
+    <aside class="panel" id="formPanel">
+      <h3 style="margin:0 0 8px 0">Create / Edit</h3>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label>Document Type</label>
+          <select id="docType"><option>Invoice</option><option>Challan</option><option>Quotation</option></select>
+        </div>
+        <div>
+          <label>Document No</label>
+          <input id="docNo" placeholder="Auto sequence"/>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div>
+          <label>Date</label>
+          <input id="docDate" type="date"/>
+        </div>
+        <div>
+          <label>Currency</label>
+          <select id="currency"><option value="INR">₹ INR</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option></select>
+        </div>
+      </div>
+
+      <label style="margin-top:10px">Logo (for form preview)</label>
+      <input type="file" id="logoFile" accept="image/*"/>
+      <img id="logoPreview" style="max-width:160px;margin-top:8px;display:none;border-radius:6px"/>
+
+      <hr style="margin:12px 0;border:none;border-top:1px dashed #eef2f7"/>
+
+      <label>From (Company)</label>
+      <input id="fromName" placeholder="Company name"/>
+      <textarea id="fromAddr" placeholder="Company address"></textarea>
+      <input id="fromPhone" placeholder="Company phone (10 digits)"/>
+      <div id="fromPhoneErr" class="muted" style="display:none">Enter exactly 10 digits</div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px dashed #eef2f7"/>
+
+      <label>To (Customer)</label>
+      <input id="toName" placeholder="Customer name"/>
+      <textarea id="toAddr" placeholder="Customer address"></textarea>
+      <input id="toPhone" placeholder="Customer phone (10 digits)"/>
+      <div id="toPhoneErr" class="muted" style="display:none">Enter exactly 10 digits</div>
+
+      <h4 style="margin-top:12px">Items — Large entry cards</h4>
+      <div id="itemsContainer" style="max-height:380px;overflow:auto;padding-right:6px">
+        <!-- item cards inserted here -->
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <button id="btnAddItem" class="btn">+ Add Item</button>
+        <button id="btnClearItems" class="btn ghost small">Clear Items</button>
+        <div style="margin-left:auto">
+          <label style="font-size:12px;color:var(--muted)">Default Tax %</label>
+          <input id="defaultTax" type="number" value="0" style="width:120px"/>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <div>
+          <label>Global Discount %</label>
+          <input id="discount" type="number" value="0"/>
+        </div>
+        <div>
+          <label>Shipping</label>
+          <input id="shipping" type="number" value="0"/>
+          <label style="margin-top:8px">Other Charges</label>
+          <input id="other" type="number" value="0"/>
+        </div>
+      </div>
+
+      <div style="margin-top:8px">
+        <label>Round-off</label>
+        <select id="roundOff"><option value="none">No</option><option value="nearest">Nearest</option><option value="down">Down</option><option value="up">Up</option></select>
+      </div>
+
+      <label style="margin-top:8px">Terms & Notes</label>
+      <textarea id="terms">Payment due within 30 days.</textarea>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button id="btnSave" class="btn">Save</button>
+        <button id="btnExportPDF" class="btn ghost small">Export PDF</button>
+        <button id="btnExportDoc" class="btn ghost small">Export Word</button>
+      </div>
+    </aside>
+
+    <!-- CENTER: Preview -->
+    <main class="panel" id="previewPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0">Live Preview</h3>
+        <div class="muted">Professional table export • no images on export</div>
+      </div>
+
+      <div id="previewPaper" style="background:#fff;border-radius:10px;padding:18px;margin-top:12px">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+          <div style="display:flex;gap:12px;align-items:center">
+            <img id="logoSmall" style="height:72px;border-radius:6px;display:none" alt="logo small"/>
+            <div>
+              <div id="previewFromName" style="font-weight:800;font-size:16px">Company</div>
+              <div id="previewFromAddr" class="muted"></div>
+              <div id="previewFromPhone" class="muted"></div>
+            </div>
+          </div>
+          <div style="text-align:right;min-width:240px">
+            <div id="previewType" style="font-weight:800;font-size:18px">Invoice</div>
+            <div class="muted">No: <span id="previewNo"></span></div>
+            <div class="muted">Date: <span id="previewDate"></span></div>
+            <div class="muted">Currency: <span id="previewCurr"></span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="muted">Bill To</div>
+          <div id="previewToName" style="font-weight:700">Customer</div>
+          <div id="previewToAddr" class="muted"></div>
+          <div id="previewToPhone" class="muted"></div>
+        </div>
+
+        <table id="previewItems" style="width:100%;margin-top:12px;border-collapse:collapse">
+          <thead><tr style="background:#f8fafc"><th style="padding:8px">Description</th><th style="padding:8px">HSN</th><th style="padding:8px">Unit</th><th style="padding:8px">Qty</th><th style="padding:8px">Rate</th><th style="padding:8px">Disc %</th><th style="padding:8px">Tax %</th><th style="padding:8px">Tax Amt</th><th style="padding:8px">Line Total</th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div style="display:flex;justify-content:space-between;margin-top:12px;align-items:flex-start">
+          <div style="max-width:52%">
+            <strong>Terms & Conditions</strong>
+            <div id="termsPreview" class="muted"></div>
+          </div>
+          <div style="text-align:right;min-width:260px">
+            <div class="muted">Subtotal: <span id="subtotal">0.00</span></div>
+            <div class="muted">Line Discounts: <span id="lineDiscVal">0.00</span></div>
+            <div class="muted">Global Discount: <span id="discountVal">0.00</span></div>
+            <div class="muted">Tax: <span id="taxVal">0.00</span> <span id="gstSplit" class="muted"></span></div>
+            <div class="muted">Shipping + Other: <span id="shipOther">0.00</span></div>
+            <div class="muted">Round Off: <span id="roundVal">0.00</span></div>
+            <div style="font-weight:800;font-size:16px">Grand Total: <span id="grandTotal">0.00</span></div>
+            <div id="amountWords" class="muted" style="margin-top:6px"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: Library & Settings -->
+    <aside class="panel" id="rightPanel">
+      <h3 style="margin-top:0">Document Library</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="searchBox" placeholder="Search by client, doc no" />
+        <select id="filterType"><option value="">All</option><option>Invoice</option><option>Challan</option><option>Quotation</option></select>
+      </div>
+      <div id="libraryList" style="max-height:260px;overflow:auto;border:1px solid #f3f6fb;border-radius:8px;padding:6px"></div>
+
+      <hr style="margin:12px 0;border:none;border-top:1px dashed #eef2f7"/>
+      <h4 style="margin-top:0">Settings</h4>
+      <label>Default Currency</label>
+      <select id="defCurrency"><option value="INR">₹ INR</option><option value="USD">$ USD</option></select>
+      <label>Default Tax %</label>
+      <input id="defTax" type="number" value="0"/>
+      <label>Default Terms</label>
+      <textarea id="defaultTerms">Payment due within 30 days.</textarea>
+      <label>Company Name</label>
+      <input id="defCompany"/>
+      <label>Company Address</label>
+      <textarea id="defAddress"></textarea>
+      <label>Company Phone</label>
+      <input id="defPhone"/>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button id="saveSettings" class="btn ghost small">Save Settings</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Admin modal -->
+  <div class="modal" id="adminModal"><div class="box"><h3>Admin</h3><p class="muted">Admin can edit/delete locked documents and change settings.</p><label>Password</label><input type="password" id="adminPassInput"><div style="display:flex;gap:8px;margin-top:8px"><button id="adminLoginBtn" class="btn small">Login</button><button id="adminCloseBtn" class="btn small ghost">Close</button></div><hr style="margin:12px 0"/><label>Change Admin Password</label><input type="password" id="adminNewPass"><button id="adminSetBtn" class="btn small ghost">Set Password</button><p class="muted" style="margin-top:8px">Default password: <strong>admin123</strong></p></div></div>
+
+  <!-- Document view modal -->
+  <div class="modal" id="docViewModal"><div class="box"><div style="display:flex;justify-content:space-between;align-items:center"><h3 id="docViewTitle">Document</h3><div style="display:flex;gap:8px"><button id="docViewPdfBtn" class="btn small">PDF</button><button id="docViewWordBtn" class="btn small ghost">Word</button><button id="docViewEditBtn" class="btn small">Edit</button><button id="docViewCloseBtn" class="btn small ghost">Close</button></div></div><div id="docViewContent" style="margin-top:12px"></div></div></div>
+
+  <div id="statusToast"></div>
+
+  <!-- jsPDF + AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+  (function(){
+    'use strict';
+    // --- Elements ---
+    const docType = document.getElementById('docType');
+    const docNo = document.getElementById('docNo');
+    const docDate = document.getElementById('docDate');
+    const currency = document.getElementById('currency');
+    const defaultTax = document.getElementById('defaultTax');
+    const logoFile = document.getElementById('logoFile');
+    const logoPreview = document.getElementById('logoPreview');
+    const logoSmall = document.getElementById('logoSmall');
+
+    const fromName = document.getElementById('fromName');
+    const fromAddr = document.getElementById('fromAddr');
+    const fromPhone = document.getElementById('fromPhone');
+    const fromPhoneErr = document.getElementById('fromPhoneErr');
+
+    const toName = document.getElementById('toName');
+    const toAddr = document.getElementById('toAddr');
+    const toPhone = document.getElementById('toPhone');
+    const toPhoneErr = document.getElementById('toPhoneErr');
+
+    const itemsContainer = document.getElementById('itemsContainer');
+    const btnAddItem = document.getElementById('btnAddItem');
+    const btnClearItems = document.getElementById('btnClearItems');
+
+    const discount = document.getElementById('discount');
+    const shipping = document.getElementById('shipping');
+    const other = document.getElementById('other');
+    const roundOffSel = document.getElementById('roundOff');
+    const terms = document.getElementById('terms');
+
+    const previewType = document.getElementById('previewType');
+    const previewNo = document.getElementById('previewNo');
+    const previewDate = document.getElementById('previewDate');
+    const previewCurr = document.getElementById('previewCurr');
+    const previewFromName = document.getElementById('previewFromName');
+    const previewFromAddr = document.getElementById('previewFromAddr');
+    const previewFromPhone = document.getElementById('previewFromPhone');
+    const previewToName = document.getElementById('previewToName');
+    const previewToAddr = document.getElementById('previewToAddr');
+    const previewToPhone = document.getElementById('previewToPhone');
+    const termsPreview = document.getElementById('termsPreview');
+
+    const previewItemsTBody = document.querySelector('#previewItems tbody');
+    const subtotalEl = document.getElementById('subtotal');
+    const lineDiscEl = document.getElementById('lineDiscVal');
+    const discountEl = document.getElementById('discountVal');
+    const taxEl = document.getElementById('taxVal');
+    const shipOtherEl = document.getElementById('shipOther');
+    const roundValEl = document.getElementById('roundVal');
+    const grandEl = document.getElementById('grandTotal');
+    const gstSplit = document.getElementById('gstSplit');
+    const amountWords = document.getElementById('amountWords');
+
+    const searchBox = document.getElementById('searchBox');
+    const filterType = document.getElementById('filterType');
+    const libraryList = document.getElementById('libraryList');
+
+    const lockBadge = document.getElementById('lockBadge');
+    const statusToast = document.getElementById('statusToast');
+
+    const btnExportPDF = document.getElementById('btnExportPDF');
+    const btnExportDoc = document.getElementById('btnExportDoc');
+    const btnSave = document.getElementById('btnSave');
+
+    const adminModal = document.getElementById('adminModal');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const adminCloseBtn = document.getElementById('adminCloseBtn');
+    const adminSetBtn = document.getElementById('adminSetBtn');
+    const adminNewPass = document.getElementById('adminNewPass');
+    const adminPassInput = document.getElementById('adminPassInput');
+
+    const docViewModal = document.getElementById('docViewModal');
+    const docViewTitle = document.getElementById('docViewTitle');
+    const docViewContent = document.getElementById('docViewContent');
+    const docViewCloseBtn = document.getElementById('docViewCloseBtn');
+    const docViewEditBtn = document.getElementById('docViewEditBtn');
+    const docViewPdfBtn = document.getElementById('docViewPdfBtn');
+    const docViewWordBtn = document.getElementById('docViewWordBtn');
+
+    const defCurrency = document.getElementById('defCurrency');
+    const defTax = document.getElementById('defTax');
+    const defaultTerms = document.getElementById('defaultTerms');
+    const defCompany = document.getElementById('defCompany');
+    const defAddress = document.getElementById('defAddress');
+    const defPhone = document.getElementById('defPhone');
+    const saveSettings = document.getElementById('saveSettings');
+
+    // State
+    let docs = JSON.parse(localStorage.getItem('mbb_docs')||'[]');
+    let settings = JSON.parse(localStorage.getItem('mbb_settings')||'{}');
+    settings = Object.assign({defCurrency:'INR',defTax:0,defaultTerms:'Payment due within 30 days.',companyName:'',companyAddress:'',companyPhone:'',theme:'light',autoSave:1}, settings||{});
+    let admin = {loggedIn: sessionStorage.getItem('mbb_admin') === '1', password: localStorage.getItem('mbb_adminPass') || 'admin123'};
+    let currentDoc = null;
+    let items = [];
+    let logoData = '';
+
+    // Utilities
+    function uid(){ return 'd_'+Math.random().toString(36).slice(2,10); }
+    function nowISO(){ return new Date().toISOString(); }
+    function isPhone(v){ return /^\d{10}$/.test((v||'').trim()); }
+    function addHours(iso,h){ const d=new Date(iso); d.setHours(d.getHours()+h); return d.toISOString(); }
+    function showStatus(msg, t=2400){ statusToast.textContent = msg; statusToast.style.display='block'; setTimeout(()=>statusToast.style.display='none', t); }
+    function saveAsBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),30000); }
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;'); }
+    function fmt(n,c){ return Number(n||0).toLocaleString(undefined,{style:'currency',currency:c||currency.value||'INR',minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function toFixed2(n){ return Math.round((Number(n)||0)*100)/100; }
+    function clampNum(v,min,max){ return Math.min(max,Math.max(min,Number(v)||0)); }
+
+    // Number to words (Indian)
+    function inrToWords(num){ num = Math.round(Number(num)||0); if(num===0) return 'Zero Rupees'; const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen']; const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety']; function two(n){ if(n<20) return a[n]; const t=Math.floor(n/10),r=n%10; return b[t]+(r?' '+a[r]:''); } function three(n){ const h=Math.floor(n/100),r=n%100; return (h? a[h]+' Hundred'+(r?' ':''):'') + (r? two(r):''); } let out=''; const crore=Math.floor(num/10000000); num%=10000000; const lakh=Math.floor(num/100000); num%=100000; const thousand=Math.floor(num/1000); num%=1000; const hundred=num; if(crore) out+= three(crore)+' Crore '; if(lakh) out+= three(lakh)+' Lakh '; if(thousand) out+= two(thousand)+' Thousand '; if(hundred) out+= three(hundred); return out.trim() + ' Rupees Only'; }
+
+    // Auto-save helper
+    function autoSaveMaybe(){ try{ if(Number(settings.autoSave||1) === 1){ saveCurrentDoc(false); } }catch(e){} }
+    window.autoSaveMaybe = autoSaveMaybe;
+
+    // Item card factory
+    function newItem(){ return {desc:'',hsn:'',unit:'Nos',qty:1,rate:0,discount:0,tax: Number(defaultTax?.value||settings.defTax||0),image:''}; }
+
+    function readFileAsDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+
+    function createItemCard(it, idx){
+      const card = document.createElement('div'); card.className='item-card'; card.dataset.idx = idx;
+      // Row 1
+      const row1 = document.createElement('div'); row1.className='item-row';
+      const descWrap = document.createElement('div');
+      const lblDesc = document.createElement('div'); lblDesc.className='label'; lblDesc.textContent='Description';
+      const inpDesc = document.createElement('input'); inpDesc.type='text'; inpDesc.value = it.desc || ''; inpDesc.addEventListener('input', e=>{ it.desc = e.target.value; renderPreview(); autoSaveMaybe(); recalcTotals(); });
+      descWrap.append(lblDesc, inpDesc);
+
+      const hsnWrap = document.createElement('div'); const lblH = document.createElement('div'); lblH.className='label'; lblH.textContent='HSN/SAC'; const inpH = document.createElement('input'); inpH.type='text'; inpH.value = it.hsn||''; inpH.addEventListener('input', e=>{ it.hsn = e.target.value; autoSaveMaybe(); }); hsnWrap.append(lblH, inpH);
+
+      const unitWrap = document.createElement('div'); const lblU = document.createElement('div'); lblU.className='label'; lblU.textContent='Unit'; const inpU = document.createElement('input'); inpU.type='text'; inpU.value = it.unit||'Nos'; inpU.addEventListener('input', e=>{ it.unit = e.target.value; autoSaveMaybe(); }); unitWrap.append(lblU, inpU);
+
+      const qtyWrap = document.createElement('div'); const lblQ = document.createElement('div'); lblQ.className='label'; lblQ.textContent='Qty'; const inpQ = document.createElement('input'); inpQ.type='number'; inpQ.step='0.01'; inpQ.value = it.qty||0; inpQ.addEventListener('input', e=>{ it.qty = Number(e.target.value)||0; recalcTotals(); autoSaveMaybe(); }); qtyWrap.append(lblQ, inpQ);
+
+      const rateWrap = document.createElement('div'); const lblR = document.createElement('div'); lblR.className='label'; lblR.textContent='Rate'; const inpR = document.createElement('input'); inpR.type='number'; inpR.step='0.01'; inpR.value = it.rate||0; inpR.addEventListener('input', e=>{ it.rate = Number(e.target.value)||0; recalcTotals(); autoSaveMaybe(); }); rateWrap.append(lblR, inpR);
+
+      row1.append(descWrap, hsnWrap, unitWrap, qtyWrap, rateWrap);
+
+      // Row 2
+      const row2 = document.createElement('div'); row2.className='item-row2';
+      const discWrap = document.createElement('div'); const lblDisc = document.createElement('div'); lblDisc.className='label'; lblDisc.textContent='Discount %'; const inpDisc = document.createElement('input'); inpDisc.type='number'; inpDisc.step='0.01'; inpDisc.value = it.discount||0; inpDisc.addEventListener('input', e=>{ it.discount = clampNum(e.target.value,0,100); e.target.value = it.discount; recalcTotals(); autoSaveMaybe(); }); discWrap.append(lblDisc, inpDisc);
+
+      const taxWrap = document.createElement('div'); const lblTax = document.createElement('div'); lblTax.className='label'; lblTax.textContent='Tax %'; const inpTax = document.createElement('input'); inpTax.type='number'; inpTax.step='0.01'; inpTax.value = it.tax||0; inpTax.addEventListener('input', e=>{ it.tax = Number(e.target.value)||0; recalcTotals(); autoSaveMaybe(); }); taxWrap.append(lblTax, inpTax);
+
+      const imgWrap = document.createElement('div'); const lblImg = document.createElement('div'); lblImg.className='label'; lblImg.textContent='Image (form only)'; const file = document.createElement('input'); file.type='file'; file.accept='image/*'; file.addEventListener('change', async e=>{ const f=e.target.files?.[0]; if(!f) return; try{ it.image = await readFileAsDataURL(f); imgThumb.src = it.image; imgThumb.style.display='block'; autoSaveMaybe(); }catch(err){ console.error(err); } }); const imgThumb = document.createElement('img'); imgThumb.className='image-thumb'; imgThumb.style.display = it.image ? 'block' : 'none'; if(it.image) imgThumb.src = it.image; imgWrap.append(lblImg, file, imgThumb);
+
+      const delBtnWrap = document.createElement('div'); delBtnWrap.style.display='flex'; delBtnWrap.style.alignItems='end'; delBtnWrap.style.paddingLeft='6px';
+      const delBtn = document.createElement('button'); delBtn.className='btn small ghost'; delBtn.textContent='Remove'; delBtn.addEventListener('click', ()=>{ items.splice(idx,1); renderItems(); recalcTotals(); autoSaveMaybe(); }); delBtnWrap.append(delBtn);
+
+      row2.append(discWrap, taxWrap, imgWrap);
+      // append
+      card.append(row1, row2, delBtnWrap);
+      return card;
+    }
+
+    function renderItems(){
+      itemsContainer.innerHTML = '';
+      items.forEach((it, idx)=> {
+        const c = createItemCard(it, idx);
+        itemsContainer.appendChild(c);
+      });
+    }
+
+    function lineAmount(it){
+      const base = (Number(it.qty)||0)*(Number(it.rate)||0);
+      const ldisc = base * ((Number(it.discount)||0)/100);
+      const taxable = base - ldisc;
+      const taxAmt = taxable * ((Number(it.tax)||0)/100);
+      return toFixed2(taxable + taxAmt);
+    }
+
+    function recalcTotals(renderPrev=true){
+      const sub = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0)),0);
+      const lineDisc = items.reduce((s,it)=> s + ((Number(it.qty)||0)*(Number(it.rate)||0))*((Number(it.discount)||0)/100),0);
+      const tax = items.reduce((s,it)=>{ const base=(Number(it.qty)||0)*(Number(it.rate)||0); const ldisc=base*((Number(it.discount)||0)/100); const taxable=base-ldisc; return s + (taxable*((Number(it.tax)||0)/100)); },0);
+      const gDisc = (sub - lineDisc) * ((Number(discount.value)||0)/100);
+      const shipOther = (Number(shipping?.value)||0) + (Number(other?.value)||0);
+      let grand = (sub - lineDisc - gDisc) + tax + shipOther;
+
+      let roundShown = 0;
+      const ro = (roundOffSel && roundOffSel.value) ? roundOffSel.value : 'none';
+      if(ro !== 'none'){
+        const rounded = ro==='nearest' ? Math.round(grand) : (ro==='down' ? Math.floor(grand) : Math.ceil(grand));
+        roundShown = toFixed2(rounded - grand);
+        grand = rounded;
+      }
+
+      subtotalEl.textContent = fmt(sub, currency.value);
+      lineDiscEl.textContent = fmt(lineDisc, currency.value);
+      discountEl.textContent = fmt(gDisc, currency.value);
+      taxEl.textContent = fmt(tax, currency.value);
+      shipOtherEl.textContent = fmt(shipOther, currency.value);
+      roundValEl.textContent = fmt(roundShown, currency.value);
+      grandEl.textContent = fmt(grand, currency.value);
+
+      if(currency.value === 'INR'){
+        const cgst = tax/2, sgst = tax/2;
+        gstSplit.textContent = `(CGST ${fmt(cgst,'INR')} + SGST ${fmt(sgst,'INR')})`;
+        amountWords.textContent = inrToWords(grand);
+      } else {
+        gstSplit.textContent = '';
+        amountWords.textContent = '';
+      }
+
+      // render preview items
+      previewItemsTBody.innerHTML = '';
+      items.forEach(it => {
+        const base=(Number(it.qty)||0)*(Number(it.rate)||0);
+        const ldisc = base*((Number(it.discount)||0)/100);
+        const taxable = base-ldisc;
+        const taxAmt = taxable*((Number(it.tax)||0)/100);
+        const lineTotal = taxable + taxAmt;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="padding:8px;border:1px solid #eef2f7">${escapeHtml(it.desc||'')}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:center">${escapeHtml(it.hsn||'')}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:center">${escapeHtml(it.unit||'')}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:right">${Number(it.qty||0)}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:right">${fmt(it.rate||0,currency.value)}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:right">${Number(it.discount||0)}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:right">${Number(it.tax||0)}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:right">${fmt(taxAmt,currency.value)}</td>
+          <td style="padding:8px;border:1px solid #eef2f7;text-align:right">${fmt(lineTotal,currency.value)}</td>`;
+        previewItemsTBody.appendChild(tr);
+      });
+
+      if(renderPrev) renderPreview();
+    }
+
+    function renderPreview(){
+      previewType.textContent = docType.value;
+      previewNo.textContent = docNo.value;
+      previewDate.textContent = docDate.value;
+      previewCurr.textContent = currency.value;
+      previewFromName.textContent = fromName.value || settings.companyName || '';
+      previewFromAddr.textContent = fromAddr.value || settings.companyAddress || '';
+      previewFromPhone.textContent = fromPhone.value || settings.companyPhone || '';
+      previewToName.textContent = toName.value || '';
+      previewToAddr.textContent = toAddr.value || '';
+      previewToPhone.textContent = toPhone.value || '';
+      termsPreview.textContent = terms.value || settings.defaultTerms || '';
+      if(logoData){
+        logoSmall.src = logoData; logoSmall.style.display='block';
+        logoPreview.src = logoData; logoPreview.style.display='block';
+      } else {
+        logoSmall.style.display='none'; logoPreview.style.display='none';
+      }
+    }
+
+    // load doc into editor (fix doc type not updating)
+    function loadDocToEditor(d){
+      if(!d) return;
+      currentDoc = JSON.parse(JSON.stringify(d));
+      docType.value = d.type || 'Invoice';
+      docNo.value = d.number || nextDocNumber(docType.value);
+      docDate.value = d.date || new Date().toISOString().slice(0,10);
+      currency.value = d.currency || settings.defCurrency || 'INR';
+      defaultTax.value = d.defaultTax ?? settings.defTax ?? 0;
+      fromName.value = d.from?.name || settings.companyName || '';
+      fromAddr.value = d.from?.address || settings.companyAddress || '';
+      fromPhone.value = d.from?.phone || settings.companyPhone || '';
+      toName.value = d.to?.name || '';
+      toAddr.value = d.to?.address || '';
+      toPhone.value = d.to?.phone || '';
+      discount.value = d.discount || 0;
+      shipping.value = d.shipping || 0;
+      other.value = d.other || 0;
+      terms.value = d.terms || settings.defaultTerms || '';
+      items = JSON.parse(JSON.stringify(d.items||[]));
+      logoData = d.logo||'';
+      renderItems();
+      recalcTotals();
+      renderPreview();
+      updateLockBadge();
+      showStatus('Loaded document');
+    }
+
+    function createDocumentObject(){
+      return {
+        id: currentDoc?.id || uid(),
+        type: docType.value,
+        number: docNo.value || nextDocNumber(docType.value),
+        date: docDate.value || new Date().toISOString().slice(0,10),
+        currency: currency.value,
+        defaultTax: Number(defaultTax.value)||0,
+        from: {name: fromName.value, address: fromAddr.value, phone: fromPhone.value},
+        to: {name: toName.value, address: toAddr.value, phone: toPhone.value},
+        items: JSON.parse(JSON.stringify(items)),
+        discount: Number(discount.value)||0,
+        shipping: Number(shipping?.value)||0,
+        other: Number(other?.value)||0,
+        terms: terms.value,
+        logo: logoData,
+        createdAt: currentDoc?.createdAt || nowISO(),
+        lastModified: nowISO()
+      };
+    }
+
+    function nextDocNumber(type){
+      const prefix = (type||'DOC').slice(0,3).toUpperCase();
+      const year = new Date().getFullYear();
+      const count = docs.filter(d=>d.type===type).length + 1;
+      return `${prefix}-${year}-${String(count).padStart(3,'0')}`;
+    }
+
+    function saveCurrentDoc(showAlert=true){
+      if(fromPhone.value && !isPhone(fromPhone.value)){ fromPhoneErr.style.display='block'; if(showAlert) alert('Company phone invalid'); return false; } else fromPhoneErr.style.display='none';
+      if(toPhone.value && !isPhone(toPhone.value)){ toPhoneErr.style.display='block'; if(showAlert) alert('Customer phone invalid'); return false; } else toPhoneErr.style.display='none';
+
+      const d = createDocumentObject();
+      if(currentDoc && currentDoc.id){
+        const idx = docs.findIndex(x=>x.id===currentDoc.id);
+        if(idx<0){ if(showAlert) alert('Document not found'); return false; }
+        const locked = new Date() >= new Date(addHours(docs[idx].createdAt,24));
+        if(locked && !admin.loggedIn){ if(showAlert) alert('Locked after 24 hours. Admin override required.'); return false; }
+        d.id = docs[idx].id; d.createdAt = docs[idx].createdAt; docs[idx] = d; currentDoc = JSON.parse(JSON.stringify(d));
+      } else {
+        docs.unshift(d); currentDoc = JSON.parse(JSON.stringify(d));
+      }
+      localStorage.setItem('mbb_docs', JSON.stringify(docs));
+      renderLibrary();
+      updateLockBadge();
+      if(showAlert) showStatus('Saved');
+      return true;
+    }
+
+    function updateLockBadge(){
+      const locked = currentDoc ? (new Date() >= new Date(addHours(currentDoc.createdAt,24))) : false;
+      lockBadge.style.display = locked? 'inline-block' : 'none';
+    }
+
+    // Library
+    function renderLibrary(){
+      libraryList.innerHTML = '';
+      const q = (searchBox.value||'').toLowerCase();
+      const ft = filterType.value;
+      docs.filter(d=> (ft? d.type===ft:true) && ((d.to?.name||'').toLowerCase().includes(q) || (d.number||'').toLowerCase().includes(q) || (d.from?.name||'').toLowerCase().includes(q))).forEach(d=>{
+        const el = document.createElement('div'); el.className='doc-row';
+        const left = document.createElement('div');
+        left.innerHTML = `<div style="font-weight:700">${escapeHtml(d.type)} • ${escapeHtml(d.number||'')}</div><div class="muted">${escapeHtml(d.to?.name||'')} • ${new Date(d.createdAt).toLocaleString()}</div>`;
+        const right = document.createElement('div'); right.style.display='flex'; right.style.gap='6px'; right.style.alignItems='center';
+        const total = d.items.reduce((s,it)=> s + lineAmount(it),0);
+        const tag = document.createElement('div'); tag.className='tag'; tag.textContent = fmt(total,d.currency||'INR');
+        const btnView = document.createElement('button'); btnView.className='btn small'; btnView.textContent='View'; btnView.addEventListener('click', ()=> openDocView(d.id));
+        const btnEdit = document.createElement('button'); btnEdit.className='btn small ghost'; btnEdit.textContent='Edit'; btnEdit.addEventListener('click', ()=>{ const locked = new Date() >= new Date(addHours(d.createdAt,24)); if(locked && !admin.loggedIn) return alert('Locked (24h). Admin only.'); loadDocToEditor(d); });
+        const btnPdf = document.createElement('button'); btnPdf.className='btn small'; btnPdf.textContent='PDF'; btnPdf.addEventListener('click', ()=> exportPDF(d));
+        const btnWord = document.createElement('button'); btnWord.className='btn small ghost'; btnWord.textContent='Word'; btnWord.addEventListener('click', ()=> exportWord(d));
+        const btnDel = document.createElement('button'); btnDel.className='btn small ghost'; btnDel.textContent='Delete'; btnDel.addEventListener('click', ()=>{ if(!admin.loggedIn) return alert('Admin only'); if(!confirm('Delete document?')) return; const idx = docs.findIndex(x=>x.id===d.id); if(idx>-1){ docs.splice(idx,1); localStorage.setItem('mbb_docs', JSON.stringify(docs)); renderLibrary(); showStatus('Deleted'); } });
+        right.append(tag, btnView, btnEdit, btnPdf, btnWord, btnDel);
+        el.append(left,right);
+        libraryList.appendChild(el);
+      });
+    }
+
+    function openDocView(id){
+      const d = docs.find(x=>x.id===id);
+      if(!d) return alert('Not found');
+      docViewTitle.textContent = `${d.type} • ${d.number}`;
+      docViewContent.innerHTML = buildDocHTML(d);
+      docViewModal.classList.add('show');
+      docViewPdfBtn.onclick = ()=> exportPDF(d);
+      docViewWordBtn.onclick = ()=> exportWord(d);
+      docViewEditBtn.onclick = ()=> { const locked = new Date() >= new Date(addHours(d.createdAt,24)); if(locked && !admin.loggedIn) return alert('Locked (24h). Admin only.'); loadDocToEditor(d); docViewModal.classList.remove('show'); };
+    }
+
+    function buildDocHTML(d){
+      const rows = d.items.map(it=>{ const base=(Number(it.qty)||0)*(Number(it.rate)||0); const ldisc = base*((Number(it.discount)||0)/100); const taxable = base-ldisc; const taxAmt = taxable*((Number(it.tax)||0)/100); const amt = (taxable+taxAmt).toFixed(2); return `<tr><td>${escapeHtml(it.desc||'')}</td><td>${escapeHtml(it.hsn||'')}</td><td>${escapeHtml(it.unit||'')}</td><td style="text-align:right">${it.qty||0}</td><td style="text-align:right">${it.rate||0}</td><td style="text-align:right">${it.discount||0}</td><td style="text-align:right">${it.tax||0}</td><td style="text-align:right">${amt}</td></tr>`; }).join('');
+      const subtotal = d.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0)),0);
+      const lineDisc = d.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0))*((it.discount||0)/100),0);
+      const tax = d.items.reduce((s,it)=>{ const base=(it.qty||0)*(it.rate||0); const l=base*((it.discount||0)/100); return s + ((base-l)*((it.tax||0)/100)); },0);
+      const gDisc = (subtotal-lineDisc)*((d.discount||0)/100);
+      const shipOther = (d.shipping||0)+(d.other||0);
+      const grand = (subtotal-lineDisc-gDisc)+tax+shipOther;
+      const gstTxt = d.currency==='INR' ? `(CGST ${(tax/2).toFixed(2)} + SGST ${(tax/2).toFixed(2)})` : '';
+      return `<div style="font-family:Inter,Arial,sans-serif;color:#111"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><strong>${escapeHtml(d.from?.name||'')}</strong><br>${escapeHtml(d.from?.address||'')}<br>${escapeHtml(d.from?.phone||'')}</div><div style="text-align:right"><h2 style="margin:0">${escapeHtml(d.type)}<br><small>${escapeHtml(d.number||'')}</small></h2><div style="margin-top:6px">Date: ${escapeHtml(d.date||'')} • Currency: ${escapeHtml(d.currency||'')}</div></div></div><table border=1 cellpadding=6 cellspacing=0 style="width:100%;margin-top:12px;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th>Desc</th><th>HSN</th><th>Unit</th><th>Qty</th><th>Rate</th><th>Disc%</th><th>Tax%</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table><div style="margin-top:12px;text-align:right">Subtotal: ${subtotal.toFixed(2)}<br>Line Discounts: ${lineDisc.toFixed(2)}<br>Global Discount: ${gDisc.toFixed(2)}<br>Tax: ${tax.toFixed(2)} ${gstTxt}<br>Shipping + Other: ${shipOther.toFixed(2)}<br><strong>Grand: ${grand.toFixed(2)} ${d.currency||''}</strong></div><div style="margin-top:12px"><strong>Terms:</strong><br>${escapeHtml(d.terms||'')}</div></div>`;
+    }
+
+    // Exports
+    function exportPDF(d){
+      try{
+        const docObj = d || createDocumentObject();
+        if(!window.jspdf) return alert('PDF engine not available');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({unit:'pt',format:'a4'});
+        pdf.setFontSize(14); pdf.text(`${docObj.type} - ${docObj.number}`,40,48);
+        pdf.setFontSize(10); pdf.text(`From: ${docObj.from.name}`,40,68); pdf.text(`To: ${docObj.to.name}`,340,68);
+        const rows = docObj.items.map(it=>{
+          const base=(Number(it.qty)||0)*(Number(it.rate)||0);
+          const ldisc=base*((Number(it.discount)||0)/100);
+          const taxable=base-ldisc;
+          const taxAmt = taxable*((Number(it.tax)||0)/100);
+          const amt = (taxable+taxAmt).toFixed(2);
+          return [it.desc||'', it.hsn||'', it.unit||'', String(it.qty||0), String(it.rate||0), String(it.discount||0), String(it.tax||0), amt];
+        });
+        pdf.autoTable({ startY:90, head:[['Desc','HSN','Unit','Qty','Rate','Disc %','Tax %','Amount']], body:rows, styles:{fontSize:10} });
+        let y = pdf.lastAutoTable.finalY + 12;
+        const subtotal = docObj.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0)),0);
+        const lineDisc = docObj.items.reduce((s,it)=> s+((it.qty||0)*(it.rate||0))*((it.discount||0)/100),0);
+        const tax = docObj.items.reduce((s,it)=>{ const base=(it.qty||0)*(it.rate||0); const l=base*((it.discount||0)/100); return s + ((base-l)*((it.tax||0)/100)); },0);
+        const gDisc = (subtotal-lineDisc)*((docObj.discount||0)/100);
+        const shipOther = (docObj.shipping||0)+(docObj.other||0);
+        const grand = (subtotal-lineDisc-gDisc)+tax+shipOther;
+        pdf.text(`Subtotal: ${subtotal.toFixed(2)}`,40,y); y+=14;
+        pdf.text(`Tax: ${tax.toFixed(2)}`,40,y); y+=14;
+        pdf.setFont(undefined,'bold'); pdf.text(`Grand Total: ${grand.toFixed(2)} ${docObj.currency}`,40,y);
+        saveAsBlob(pdf.output('blob'), `${docObj.number||'document'}.pdf`);
+      }catch(e){ console.error(e); alert('PDF export failed: '+(e.message||e)); }
+    }
+
+    function exportWord(d){
+      try{
+        const docObj = d || createDocumentObject();
+        const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(docObj.number||'Document')}</title></head><body>${buildDocHTML(docObj)}</body></html>`;
+        const blob = new Blob([html],{type:'application/msword'});
+        saveAsBlob(blob, `${docObj.number||'document'}.doc`);
+      }catch(e){ console.error(e); alert('Word export failed'); }
+    }
+
+    // Events & wiring
+    btnAddItem.addEventListener('click', ()=>{ items.push(newItem()); renderItems(); recalcTotals(); autoSaveMaybe(); });
+    btnClearItems.addEventListener('click', ()=>{ if(!confirm('Clear all items?')) return; items = [newItem()]; renderItems(); recalcTotals(); autoSaveMaybe(); });
+
+    // wire many inputs
+    [docType, docNo, docDate, currency, defaultTax, fromName, fromAddr, fromPhone, toName, toAddr, toPhone, discount, shipping, other, roundOffSel, terms].forEach(el=>{
+      if(!el) return;
+      el.addEventListener('input', ()=>{ recalcTotals(); renderPreview(); autoSaveMaybe(); });
+    });
+
+    logoFile.addEventListener('change', async e=>{ const f = e.target.files?.[0]; if(!f) return; logoData = await readFileAsDataURL(f); logoPreview.src = logoData; logoPreview.style.display='block'; logoSmall.src = logoData; logoSmall.style.display='block'; autoSaveMaybe(); });
+
+    btnSave.addEventListener('click', ()=>{ const ok = saveCurrentDoc(true); if(ok) showStatus('Saved'); });
+    btnExportPDF.addEventListener('click', ()=> exportPDF());
+    btnExportDoc.addEventListener('click', ()=> exportWord());
+
+    document.getElementById('navInvoice').addEventListener('click', ()=> newDocument('Invoice'));
+    document.getElementById('navChallan').addEventListener('click', ()=> newDocument('Challan'));
+    document.getElementById('navQuotation').addEventListener('click', ()=> newDocument('Quotation'));
+    document.getElementById('btnLibrary').addEventListener('click', ()=> renderLibrary());
+    document.getElementById('btnSettings').addEventListener('click', ()=> { document.getElementById('rightPanel').scrollIntoView({behavior:'smooth'}); });
+
+    document.getElementById('btnAdmin').addEventListener('click', ()=> adminModal.classList.add('show'));
+    adminCloseBtn.addEventListener('click', ()=> adminModal.classList.remove('show'));
+    adminLoginBtn.addEventListener('click', ()=>{ if(adminPassInput.value === admin.password){ admin.loggedIn = true; sessionStorage.setItem('mbb_admin','1'); showStatus('Admin logged in'); adminModal.classList.remove('show'); } else alert('Wrong password'); });
+    adminSetBtn.addEventListener('click', ()=>{ if(!admin.loggedIn) return alert('Login as admin first'); if(!adminNewPass.value) return alert('Enter new password'); admin.password = adminNewPass.value; localStorage.setItem('mbb_adminPass', admin.password); showStatus('Password updated'); adminNewPass.value=''; });
+
+    docViewCloseBtn.addEventListener('click', ()=> docViewModal.classList.remove('show'));
+
+    searchBox.addEventListener('input', renderLibrary);
+    filterType.addEventListener('change', renderLibrary);
+
+    saveSettings.addEventListener('click', ()=>{
+      settings.defCurrency = defCurrency.value;
+      settings.defTax = Number(defTax.value)||0;
+      settings.defaultTerms = defaultTerms.value;
+      settings.companyName = defCompany.value;
+      settings.companyAddress = defAddress.value;
+      settings.companyPhone = defPhone.value;
+      localStorage.setItem('mbb_settings', JSON.stringify(settings));
+      if(!currentDoc || !currentDoc.id){
+        currency.value = settings.defCurrency;
+        defaultTax.value = settings.defTax;
+        fromName.value = settings.companyName;
+        fromAddr.value = settings.companyAddress;
+        fromPhone.value = settings.companyPhone;
+        terms.value = settings.defaultTerms;
+        renderItems();
+        recalcTotals();
+        renderPreview();
+      }
+      showStatus('Settings saved');
+    });
+
+    function newDocument(type){
+      currentDoc = null;
+      items = [newItem()];
+      docType.value = type || 'Invoice';
+      docNo.value = nextDocNumber(docType.value);
+      docDate.value = new Date().toISOString().slice(0,10);
+      currency.value = settings.defCurrency || 'INR';
+      defaultTax.value = settings.defTax || 0;
+      fromName.value = settings.companyName || '';
+      fromAddr.value = settings.companyAddress || '';
+      fromPhone.value = settings.companyPhone || '';
+      toName.value=''; toAddr.value=''; toPhone.value='';
+      discount.value = 0; shipping.value = 0; other.value = 0;
+      renderItems(); recalcTotals(); renderPreview();
+      showStatus('New document ready');
+    }
+
+    // self-test
+    function selfTest(){
+      try{
+        items.push(newItem());
+        renderItems();
+        recalcTotals();
+        saveCurrentDoc(false);
+        // no alert here
+      }catch(e){ console.error('self-test error', e); }
+    }
+
+    // Init
+    function init(){
+      docDate.value = new Date().toISOString().slice(0,10);
+      currency.value = settings.defCurrency || 'INR';
+      defaultTax.value = settings.defTax || 0;
+      terms.value = settings.defaultTerms || '';
+      defCurrency.value = settings.defCurrency || 'INR';
+      defTax.value = settings.defTax || 0;
+      defaultTerms.value = settings.defaultTerms || '';
+      defCompany.value = settings.companyName || '';
+      defAddress.value = settings.companyAddress || '';
+      defPhone.value = settings.companyPhone || '';
+      items = [newItem()];
+      docNo.value = nextDocNumber(docType.value);
+      renderItems(); recalcTotals(); renderPreview(); renderLibrary();
+      setTimeout(selfTest,500);
+      // expose debug
+      window.mbb = { addItem: ()=>{ items.push(newItem()); renderItems(); recalcTotals(); }, save: saveCurrentDoc, load: loadDocToEditor, exportPDF, exportWord };
+    }
+    init();
+
+  })();
+  </script>
+</body>
+</html>
